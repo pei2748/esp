@@ -5,32 +5,146 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-* Upcoming changes.
-
-## [major.minor.patch] - year-month-day
+## [1.0.0]
 
 ### Added
 
-* New features.
-
-### Changed
-
-* Changes in existing functionality.
-
-### Deprecated
-
-* Soon-to-be removed features.
-
-### Removed
-
-* Removed features.
-
-### Fixed
-
-* Any bug fixes.
-
-### Security
-
-* Vulnerabilities.
+- **Accelerator design flows**
+	- Keras/Pytorch/ONNX with [hls4ml](https://fastmachinelearning.org/hls4ml/)
+		- [Accelerator templates](https://github.com/sld-columbia/esp/tree/master/utils/scripts/templates)
+		- Accelerator and test applications generation with [AccInit](https://github.com/sld-columbia/esp/blob/master/utils/scripts/init_accelerator.sh)
+		- [Tutorial](https://www.esp.cs.columbia.edu/docs/hls4ml/)
+	- C/C++ with Xilinx Vivado HLS
+		- [Accelerator templates](https://github.com/sld-columbia/esp/tree/master/utils/scripts/templates)
+		- Accelerator and test applications skeleton generation with [AccInit](https://github.com/sld-columbia/esp/blob/master/utils/scripts/init_accelerator.sh)
+		- [Tutorial](https://www.esp.cs.columbia.edu/docs/cpp_acc/)
+		- [Sample accelerators](https://github.com/sld-columbia/esp/tree/master/accelerators/vivado_hls): adder (element-wise addition)
+	- C/C++ with Mentor Catapult HLS
+		- [Tutorial](https://www.esp.cs.columbia.edu/docs/mentor_cpp_acc/)
+	- SystemC with Cadence Stratus HLS
+		- Accelerator templates ([includes](https://github.com/sld-columbia/esp-accelerator-templates), [skeleton templates](https://github.com/sld-columbia/esp/tree/master/utils/scripts/templates))
+		- Accelerator and test applications skeleton generation with [AccInit](https://github.com/sld-columbia/esp/blob/master/utils/scripts/init_accelerator.sh)
+		- [Tutorial](https://www.esp.cs.columbia.edu/docs/systemc_acc/)
+		- [Sample accelerators](https://github.com/sld-columbia/esp/tree/master/accelerators/stratus_hls): dummy (identity mapping), fft (Fast Fourier Transform 1D), sort, spmv (sparse matrix-vector multiplication), synth (synthetic traffic generator), visionchip (night-vision kernels), vitbfly2 (Viterbi butterfly), vitdodec (Viterbi decoder)
+	- Chisel
+		- [Sample accelerators](https://github.com/IBM/esp-chisel-accelerators): AdderAccelerator (element-wise addition), FFTAccelerator (Fast Fourier Transform 1D)
+- **Third-party accelerator integration flow**
+	- Supported accelerator interfaces: AXI for the memory interface, AXI-Lite and APB for the configuration interface.
+	- [Tutorial](https://www.esp.cs.columbia.edu/docs/thirdparty_acc/)
+	- [Sample accelerators](https://github.com/sld-columbia/esp/tree/master/third-party/accelerators): [NVDLA](http://nvdla.org/)
+- **SoC design flow**
+	- High-level SoC configuration (batch or GUI)
+	- Automatic SoC generation
+	- Push-button full-system RTL simulation of bare-metal programs
+		- Supported simulators: Mentor Modelsim SE, Cadence Incisive, Cadence Xcelium
+	- Push-button FPGA bitstream generation
+		- Supported FPGA tools: Xilinx Vivado
+- **Architecture**
+	- [NoC](https://github.com/sld-columbia/esp/tree/master/rtl/src/sld/noc)
+		- Packet-switched NoC with lookahead routing, single-cycle hop, and configurable bitwidth
+		- ESP SoCs use 6 bidirectional physical NoC planes
+			- 3 for cache coherence messages (32-bits or 64-bits based on processor architecture)
+			- 2 for DMA messages (32-bits or 64-bits based on processor architecture)
+			- 1 32-bit plane for the other messages (interrupts, memory-mapped IO and configuration registers)
+	- Processor tile
+		- Processor
+			- Available options: 32-bit [Leon3](https://www.gaisler.com/index.php/products/processors/leon3) ([Sparc](https://sparc.org/) v8) with [ESP FPU](https://github.com/sld-columbia/esp/tree/master/rtl/src/sld/fpu), 64-bit [Ariane](https://github.com/openhwgroup/cva6) ([RISC-V](https://riscv.org/)), 32-bit [Ibex](https://github.com/lowRISC/ibex) ([RISC-V](https://riscv.org/))
+		- L2 private cache (optional)
+			- NoC-based directory-based MESI protocol
+			- Available implementations: [SystemVerilog](https://github.com/sld-columbia/esp-caches/tree/master/l2), [SystemC](https://github.com/sld-columbia/esp/tree/master/systemc/l2)
+		- Bus
+			- Memory request bus options: AXI, AHB
+			- Memory-mapped IO requests bus options: APB
+		- Support for SoCs with multiple processor tiles
+	- Accelerator tile
+		- Accelerator (see accelerator design flow options above)
+		- Accelerator socket
+			- Accelerator configuration registers (default registers + user-defined registers)
+			- [Miss-free accelerator TLB](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/sldcommon/acc_tlb.vhd) for low overhead virtual memory support
+			- [Accelerator DMA engine](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/acc_dma2noc.vhd)
+			- Private cache (optional)
+				- Same as the L2 private cache in the processor tile
+			- Cache coherence
+				- Supported options: coherent with private cache, coherent DMA, LLC-coherent DMA, non-coherent DMA
+				- Configurable at run-time
+			- Point-to-point accelerator communication
+				- Configurable at run-time
+		- Support for SoCs with multiple accelerator tiles
+	- Third-party accelerator tile
+		- Accelerator socket
+			- Bus-to-NoC bridges
+				- Memory requests bus options: AXI
+				- Memory-mapped IO requests bus options: AXI-Lite, APB
+		- Support for SoCs with multiple third-party accelerator tiles
+	- Memory tile
+		- Last-level cache slice (optional)
+			- NoC-based directory-based MESI protocol
+			- Support for coherent DMA and LLC-coherent DMA
+			- Available implementations: [SystemVerilog](https://github.com/sld-columbia/esp-caches/tree/master/llc), [SystemC](https://github.com/sld-columbia/esp/tree/master/systemc/llc)
+		- Memory channel
+			- Optionally include AHB bus and memory controller in the memory tile
+		- Memory simulation model for full-system RTL simulation
+		- Support for all accelerator cache coherence options
+		- Support for SoCs with multiple memory tiles
+			- Up to 2 memory tiles on proFPGA Virtex7 XC7V2000T FPGA module and up to 4 memory tiles on proFPGA Virtex UltraScale XCVU440 FPGA module
+	- Auxiliary tile
+		- Peripherals: [Ethernet](https://github.com/sld-columbia/esp/tree/master/rtl/src/gaisler/greth), [UART](https://github.com/sld-columbia/esp/tree/master/rtl/src/gaisler/uart), [DVI (only on proFPGA FPGA modules with DVI interface board)](https://github.com/sld-columbia/esp/blob/master/rtl/src/gaisler/misc/svgactrl.vhd)
+		- [ESP Link debug unit](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/sldcommon/esplink.sv)
+		- [SoC initialization unit](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/sldcommon/esp_init.vhd)
+		- Interrupt controller: [Leon3 multiprocessor interrupt controller](https://github.com/sld-columbia/esp/blob/master/rtl/src/gaisler/irqmp/irqmp.vhd) or [RISC-V platform interrupt controller](https://github.com/sld-columbia/rv_plic/tree/e78512f1625d3fb64b3fd155ae78e633fdd83846)
+		- Timer: [GRLIB general-purpose timer](https://github.com/sld-columbia/esp/blob/master/rtl/src/gaisler/misc/gptimer.vhd) or [RISC-V core-local interrupt controller](https://github.com/sld-columbia/ariane/tree/8a5248cdf61fe3dc3e9abab433995bee268ae411/src/clint)
+		- [Frame buffer](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/sldcommon/ahbram_dp.vhd)
+	- Scratchpad (shared-local memory) tile
+		- 1MB, 2MB, or 4MB of shared, software-managed addressable memory
+		- Support for multiple SLM tiles
+	- Additional SoC services
+		- [ESP tile CSRs](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/esp_tile_csr.vhd)
+			- Configuration registers
+				- PADs configuration
+				- Clock generators configuration
+				- Tile ID configuration
+				- Core ID configuration (processor tile only)
+				- Ethernet and UART scalers configuration (auxiliary tile only)
+				- Soft reset
+			- Performance counters
+				- Accelerators activity
+				- Caches hit and miss rates
+				- Memory accesses
+				- NoC routers traffic
+				- Tiles dynamic voltage-frequency scaling operation
+			- ESP CSRs and performance counters are memory mapped and accessible from software
+			- With proFPGA FPGA modules, performance counters can be accessed via Ethernet as well through an [MMI64-based monitor interface](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/sldcommon/monitor.vhd) (see ESP software tools below)
+		- NoC adapters: AXI ([to-NoC](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/cpu_axi2noc.vhd)), AHB ([to-NoC](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/cpu_ahbs2noc.vhd), [from-NoC](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/mem_noc2ahbm.vhd)), APB ([to-NoC](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/cpu_apb2noc.vhd), [from-NoC](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/misc_noc2apb.vhd)), DMA ([to/from-NoC](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/acc_dma2noc.vhd)), interrupt line ([to-NoC](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/misc_irq2noc.vhd), [from-NoC](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/cpu_irq2noc.vhd))
+		- Other adapters: [APB-to-AXI-Lite](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/sldcommon/apb2axil.sv), custom memory link for ESP instances w/o integrated DDR controller ([link-to-AHB](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/ext2ahbm.vhd), [cache/DMA-to-link](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/mem2ext.vhd))
+		- NoC queues in every tile ([processor](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/cpu_tile_q.vhd), [accelerator](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/acc_tile_q.vhd), [memory](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/mem_tile_q.vhd), [auxiliary](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/misc_tile_q.vhd), [scratchpad](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/slm_tile_q.vhd))
+		- [Dynamic Voltage-Frequency Scaling controller](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/dvfs_top.vhd) in every tile
+		- [Single-tile test unit](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/jtag_test.vhd) in every tile
+- **[ESP software stack](https://github.com/sld-columbia/esp/tree/master/soft)**
+	- Support for Ariane, Leon3, and Ibex processors
+	- Linux SMP support (Ariane and Leon3 only)
+	- Bare-metal support
+	- Multi-core support (Leon3 only)
+		- Leon3 bare-metal multi-core [test suite](https://github.com/sld-columbia/esp/tree/master/utils/grlib/software/leon3)
+	- Accelerator-specific software ([Ariane](https://github.com/sld-columbia/esp/tree/master/soft/ariane/drivers), [Leon3](https://github.com/sld-columbia/esp/tree/master/soft/leon3/drivers), [Ibex](https://github.com/sld-columbia/esp/tree/master/soft/ibex/drivers))
+		- ESP accelerator device driver
+		- LibESP: the ESP accelerator invocation API
+			- 3 functions: `esp_alloc`, `esp_run`, `esp_free`
+			- Manage the execution of multiple accelerators in parallel or in a pipeline
+		- Bare-metal unit-test sample applications for accelerators
+		- Linux unit-test sample applications for accelerators
+		- [Multi-accelerator Linux applications examples](https://github.com/sld-columbia/esp/tree/master/soft/examples/multifft)
+- **[ESP software tools](https://github.com/sld-columbia/esp/tree/master/utils)**
+	- [SoCGen](https://github.com/sld-columbia/esp/tree/master/utils/socmap): configure and generate an ESP SoC (batch or GUI)
+	- [SLDGen](https://github.com/sld-columbia/esp/tree/master/utils/sldgen): accelerator tiles generator
+	- [AccInit](https://github.com/sld-columbia/esp/blob/master/utils/scripts/init_accelerator.sh): accelerator skeleton generator, including device driver and test applications
+	- [MemGen](https://github.com/sld-columbia/esp/tree/master/utils/memgen): multi-port and multi-bank memory generator for SystemC accelerators
+	- [ESPLink](https://github.com/sld-columbia/esp/tree/master/utils/esplink): debug link via Ethernet from a host machine
+	- [ESPMon](https://github.com/sld-columbia/esp/tree/master/utils/espmon): collection of hardware performance monitors accessed via Ethernet through the proFPGA MMI64 interface (batch or GUI)
+- **Supported FPGA development boards**
+	- Xilinx Virtex UltraScale+ FPGA VCU118
+	- Xilinx Virtex UltraScale+ FPGA VCU128
+	- Xilinx Virtex-7 FPGA VC707
+	- proFPGA [Virtex7 XC7V2000T](https://www.profpga.com/products/fpga-modules-overview/virtex-7-based/profpga-xc7v2000t)
+	- proFPGA [Virtex Ultrascale XCVU440](https://www.profpga.com/products/fpga-modules-overview/virtex-ultrascale-based/profpga-xcvu440)
+- **Supported OS**
+	- CentOS 7 (recommended), Red Hat Enterprise Linux 7.8, Ubuntu 18.04 (Cadence Stratus HLS not supported)
