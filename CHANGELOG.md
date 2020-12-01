@@ -95,8 +95,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 		- Timer: [GRLIB general-purpose timer](https://github.com/sld-columbia/esp/blob/master/rtl/src/gaisler/misc/gptimer.vhd) or [RISC-V core-local interrupt controller](https://github.com/sld-columbia/ariane/tree/8a5248cdf61fe3dc3e9abab433995bee268ae411/src/clint)
 		- [Frame buffer](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/sldcommon/ahbram_dp.vhd)
 	- Scratchpad (shared-local memory) tile
-		- 1MB, 2MB, or 4MB of shared, software-managed addressable memory
+		- 64KB, 128KB, 256KB, 512KB, 1MB, 2MB, 4MB of shared, software-managed addressable memory
 		- Support for multiple SLM tiles
+		- SLM can replace external memory when configuring ESP with no memory tiles and selecting the [Ibex](https://github.com/lowRISC/ibex) core
 	- Additional SoC services
 		- [ESP tile CSRs](https://github.com/sld-columbia/esp/blob/master/rtl/src/sld/tile/esp_tile_csr.vhd)
 			- Configuration registers
