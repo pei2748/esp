@@ -29,9 +29,10 @@ adheres to [Calendar Versioning](https://calver.org/) with format
 		- [Tutorial](https://www.esp.cs.columbia.edu/docs/systemc_acc/)
 		- Sample accelerators: dummy (identity mapping), fft (Fast Fourier Transform 1D), sort, spmv (sparse matrix-vector multiplication), synth (synthetic traffic generator), nightvision (night-vision kernels), vitbfly2 (Viterbi butterfly), vitdodec (Viterbi decoder)
 	- Chisel
-		- Sample accelerators: adder (element-wise addition), counter, fft (Fast Fourier Transform 1D)
+	    - [Accelerator templates](https://github.com/sld-columbia/esp-chisel-accelerators)
+	    - Sample accelerators: adder (element-wise addition), counter, fft (Fast Fourier Transform 1D)
 - **Third-party accelerator integration flow**
-	- Supported accelerator interfaces: AXI for the memory interface, AXI-Lite and APB for the configuration interface.
+	- Supported accelerator interfaces: AXI for the memory interface, AXI-Lite and APB for the configuration interface
 	- [Tutorial](https://www.esp.cs.columbia.edu/docs/thirdparty_acc/)
 	- Sample accelerators: [NVDLA](http://nvdla.org/)
 - **SoC design flow**
@@ -50,7 +51,7 @@ adheres to [Calendar Versioning](https://calver.org/) with format
 			- 1 32-bit plane for the other messages (interrupts, memory-mapped IO and configuration registers)
 	- Processor tile
 		- Processor
-			- Available options: 32-bit [Leon3](https://www.gaisler.com/index.php/products/processors/leon3) ([Sparc](https://sparc.org/) v8) with ESP FPU, 64-bit [Ariane](https://github.com/openhwgroup/cva6) ([RISC-V](https://riscv.org/)), 32-bit [Ibex](https://github.com/lowRISC/ibex) ([RISC-V](https://riscv.org/))
+			- Available options: 32-bit [Leon3](https://www.gaisler.com/index.php/products/processors/leon3) (Sparc v8) with ESP FPU, 64-bit [Ariane](https://github.com/openhwgroup/cva6) (RISC-V), 32-bit [Ibex](https://github.com/lowRISC/ibex) (RISC-V)
 		- L2 private cache (optional)
 			- NoC-based directory-based MESI protocol
 			- Available implementations: [SystemVerilog](https://github.com/sld-columbia/esp-caches/tree/master/l2), [SystemC](https://github.com/sld-columbia/esp-caches/tree/master/systemc/l2)
@@ -97,25 +98,13 @@ adheres to [Calendar Versioning](https://calver.org/) with format
 		- Timer: GRLIB general-purpose timer or [RISC-V core-local interrupt controller](https://github.com/sld-columbia/ariane/tree/master/src/clint)
 		- Frame buffer
 	- Scratchpad (shared-local memory) tile
-		- 64KB, 128KB, 256KB, 512KB, 1MB, 2MB, 4MB of shared, software-managed addressable memory
+		- Shared software-managed addressable memory
 		- Support for multiple SLM tiles
-		- SLM can replace external memory when configuring ESP with no memory tiles and selecting the [Ibex](https://github.com/lowRISC/ibex) core
+		- SLM can replace external memory when configuring ESP with no memory tiles and selecting the Ibex core
 	- Additional SoC services
-		- ESP tile CSRs
-			- Configuration registers
-				- PADs configuration
-				- Clock generators configuration
-				- Tile ID configuration
-				- Core ID configuration (processor tile only)
-				- Ethernet and UART scalers configuration (auxiliary tile only)
-				- Soft reset
-			- Performance counters
-				- Accelerators activity
-				- Caches hit and miss rates
-				- Memory accesses
-				- NoC routers traffic
-				- Tiles dynamic voltage-frequency scaling operation
-			- ESP CSRs and performance counters are memory mapped and accessible from software
+		- ESP tile CSRs: memory mapped and accessible from software
+			- Configuration registers: PADs configuration, clock generators configuration, tile ID configuration, core ID configuration (processor tile only), Ethernet and UART scalers configuration (auxiliary tile only), soft reset
+			- Performance counters: accelerators activity, caches hit and miss rates, memory accesses, NoC routers traffic, dynamic voltage-frequency scaling operation
 			- With proFPGA FPGA modules, performance counters can be accessed via Ethernet as well through an MMI64-based monitor interface (see ESP software tools below)
 		- NoC adapters: AXI (to-NoC), AHB (to-NoC, from-NoC), APB (to-NoC, from-NoC), DMA (to/from-NoC), interrupt line (to-NoC, from-NoC)
 		- Other adapters: APB-to-AXI-Lite, custom memory link for ESP instances w/o integrated DDR controller (link-to-AHB, cache/DMA-to-link)
@@ -132,15 +121,15 @@ adheres to [Calendar Versioning](https://calver.org/) with format
 		- ESP accelerator device driver
 		- LibESP: the ESP accelerator invocation API
 			- 3 functions: `esp_alloc`, `esp_run`, `esp_free`
-			- Manage the execution of multiple accelerators in parallel or in a pipeline
+			- Manage the execution of multiple accelerators in parallel and/or in a pipeline
 		- Bare-metal unit-test sample applications for accelerators
 		- Linux unit-test sample applications for accelerators
 		- Multi-accelerator Linux applications examples
 - **ESP software tools**
-	- SoCGen: configure and generate an ESP SoC (batch or GUI)
-	- SocketGen: accelerator tiles generator
-	- AccGen: accelerator skeleton generator, including device driver and test applications
+	- AccGen: accelerator skeleton generator, including testbench, device driver and test applications
 	- PLMGen: multi-port and multi-bank memory generator for SystemC accelerators
+    - SoCGen: configure and generate an ESP SoC (batch or GUI)
+	- SocketGen: generate the RTL for some of the ESP tile sockets
 	- ESPLink: debug link via Ethernet from a host machine
 	- ESPMon: collection of hardware performance monitors accessed via Ethernet through the proFPGA MMI64 interface (batch or GUI)
 - **Supported FPGA development boards**
