@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sld>
+  <accelerator name="mriq_v2" desc="Accelerator MRIQ_V2" data_size="4" device_id="04B" hls_tool="vivado_hls">
+    <param name="numK" desc="numK" />
+    <param name="numX" desc="numX" />
+  </accelerator>
+</sld>
