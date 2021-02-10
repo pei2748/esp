@@ -9,6 +9,7 @@
 #include <esp_accelerator.h>
 #include <esp_probe.h>
 #include <fixed_point.h>
+
 #include <math.h> // for fabs function
 
 typedef int32_t token_t;
@@ -17,18 +18,23 @@ typedef int32_t token_t;
 #define FX_IL 12
 
 
+
 static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 {
         return (sizeof(void *) / _st);
 }
 
 
-#define SLD_MRIQ 0x075
-#define DEV_NAME "sld,mriq_vivado"
+#define SLD_MRIQ 0x079
+#define DEV_NAME "sld,mriq_stratus"
 
 /* <<--params-->> */
 const int32_t numX = 4;
 const int32_t numK = 16;
+const int32_t num_batch_k = 1;
+const int32_t batch_size_k = 16;
+const int32_t num_batch_x = 1;
+const int32_t batch_size_x = 4;
 
 static unsigned in_words_adj;
 static unsigned out_words_adj;
@@ -48,8 +54,12 @@ static unsigned mem_size;
 
 /* User defined registers */
 /* <<--regs-->> */
-#define MRIQ_NUMX_REG 0x44
-#define MRIQ_NUMK_REG 0x40
+#define MRIQ_NUMX_REG 0x54
+#define MRIQ_NUMK_REG 0x50
+#define MRIQ_NUM_BATCH_K_REG 0x4c
+#define MRIQ_BATCH_SIZE_K_REG 0x48
+#define MRIQ_NUM_BATCH_X_REG 0x44
+#define MRIQ_BATCH_SIZE_X_REG 0x40
 
 
 static int validate_buf(token_t *out, token_t *gold)
@@ -64,16 +74,16 @@ static int validate_buf(token_t *out, token_t *gold)
     for (j = 0; j < 2*numX; j++){
       int idx = i * out_words_adj + j;
       if(!fx2float(gold[idx], FX_IL) && !fx2float(out[idx], FX_IL))
-	diff = 0;
+        diff = 0;
       else if(!fx2float(gold[idx], FX_IL))
-	diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
-		  /fx2float(out[idx], FX_IL));
+        diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
+		    /fx2float(out[idx], FX_IL));
       else
-	diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
-		  /fx2float(gold[idx], FX_IL));
+        diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
+		    /fx2float(gold[idx], FX_IL));
 
       if (diff > error_th)
-	errors++;
+        errors++;
     }
 
   return errors;
@@ -83,8 +93,9 @@ static int validate_buf(token_t *out, token_t *gold)
 
 static void init_buf (token_t *in, token_t * gold)
 {
-#include "../../hw/tb/test_barec.h"
+#include "../../hw/data4bm/test_small_4bm.h"
 }
+
 
 int main(int argc, char * argv[])
 {
@@ -101,10 +112,10 @@ int main(int argc, char * argv[])
 	unsigned coherence;
 
 	if (DMA_WORD_PER_BEAT(sizeof(token_t)) == 0) {
-		in_words_adj = 3*numX + 5*numK;
+		in_words_adj = 3*numX+5*numK;
 		out_words_adj = 2*numX;
 	} else {
-		in_words_adj = round_up(3*numX + 5*numK, DMA_WORD_PER_BEAT(sizeof(token_t)));
+		in_words_adj = round_up(3*numX+5*numK, DMA_WORD_PER_BEAT(sizeof(token_t)));
 		out_words_adj = round_up(2*numX, DMA_WORD_PER_BEAT(sizeof(token_t)));
 	}
 	in_len = in_words_adj * (1);
@@ -154,8 +165,7 @@ int main(int argc, char * argv[])
 		printf("  ptable = %p\n", ptable);
 		printf("  nchunk = %lu\n", NCHUNK(mem_size));
 
-#ifndef __riscv// now it is running on Leon3 core, leon3 will go over all the coherence types. If we want to skip the fully coherence cache access, replace <= with <
-
+#ifndef __riscv // for leon3, skip ACC_COH_FULL
 		for (coherence = ACC_COH_NONE; coherence < ACC_COH_FULL; coherence++) {
 #else
 		{
@@ -164,6 +174,7 @@ int main(int argc, char * argv[])
 #endif
 			printf("  --------------------\n");
 			printf("  Generate input...\n");
+
 			init_buf(mem, gold);
 
 			// Pass common configuration parameters
@@ -187,6 +198,10 @@ int main(int argc, char * argv[])
 			/* <<--regs-config-->> */
 		iowrite32(dev, MRIQ_NUMX_REG, numX);
 		iowrite32(dev, MRIQ_NUMK_REG, numK);
+		iowrite32(dev, MRIQ_NUM_BATCH_K_REG, num_batch_k);
+		iowrite32(dev, MRIQ_BATCH_SIZE_K_REG, batch_size_k);
+		iowrite32(dev, MRIQ_NUM_BATCH_X_REG, num_batch_x);
+		iowrite32(dev, MRIQ_BATCH_SIZE_X_REG, batch_size_x);
 
 			// Flush (customize coherence model here)
 			esp_flush(coherence);

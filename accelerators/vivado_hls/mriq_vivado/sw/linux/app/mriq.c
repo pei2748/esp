@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "libesp.h"
 #include "cfg.h"
-
+#include <math.h> // for fabs function 
 #include "../../../hw/tb/helper.h" // for two reading file functions
 #include <fixed_point.h> // for fx2float
 #define fx2float fixed32_to_float
@@ -54,19 +54,6 @@ static void init_buffer(token_t *inbuff, token_t *outbuff_gold)
 
   char* inputName =  "test_small.bin";
   char* goldName =   "test_small.out";
-
-
-
-  FILE *fin;
-  fin = fopen(inputName, "r");
-  FILE *fpr;
-  fpr = fopen(goldName, "r");
-
-
-  if(!fin || !fpr){
-    fprintf(stderr, "cannot open file... FAIL!\n");
-    exit(1);
-  }
 
 
   float *kx, *ky, *kz;          /* K trajectory (3D vectors) */
