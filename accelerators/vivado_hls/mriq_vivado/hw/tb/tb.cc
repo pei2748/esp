@@ -18,26 +18,45 @@ int main(int argc, char **argv) {
 	 const unsigned numX = 4;
 	 const unsigned numK = 16;
 
-    uint32_t in_words_adj;
+    uint32_t inX_words_adj;
+    uint32_t inK_words_adj;
+
     uint32_t out_words_adj;
-    uint32_t in_size;
+
+    uint32_t inX_size;
+    uint32_t inK_size;
     uint32_t out_size;
+
+    uint32_t dma_inX_size;
+    uint32_t dma_inK_size;
+
     uint32_t dma_in_size;
+
     uint32_t dma_out_size;
     uint32_t dma_size;
 
 
-    in_words_adj = round_up(3*numX + 5*numK, VALUES_PER_WORD);
-    out_words_adj = round_up(2*numX, VALUES_PER_WORD);
-    in_size = in_words_adj * (1);
-    out_size = out_words_adj * (1);
 
-    dma_in_size = in_size / VALUES_PER_WORD;
+    inX_words_adj = round_up(3*numX, VALUES_PER_WORD);
+    inX_size = inX_words_adj * (1);
+    dma_inX_size = inX_size / VALUES_PER_WORD;
+
+    inK_words_adj = round_up(5*numK, VALUES_PER_WORD);
+    inK_size = inK_words_adj * (1);
+    dma_inK_size = inK_size / VALUES_PER_WORD;
+
+
+    out_words_adj = round_up(2*numX, VALUES_PER_WORD);
+    out_size = out_words_adj * (1);
     dma_out_size = out_size / VALUES_PER_WORD;
-    dma_size = dma_in_size + dma_out_size;
+
+
+    dma_size = dma_inX_size + dma_inK_size + dma_out_size;
 
     dma_word_t *mem=(dma_word_t*) malloc(dma_size * sizeof(dma_word_t));
-    word_t *inbuff=(word_t*) malloc(in_size * sizeof(word_t));
+    word_t *inbuff_x=(word_t*) malloc(inX_size * sizeof(word_t));
+    word_t *inbuff_k=(word_t*) malloc(inK_size * sizeof(word_t));
+
     word_t *outbuff=(word_t*) malloc(out_size * sizeof(word_t));
     word_t *outbuff_gold= (word_t*) malloc(out_size * sizeof(word_t));
     dma_info_t load;
@@ -85,26 +104,34 @@ int main(int argc, char **argv) {
     goldQi = (float *) malloc(sizeof(float) * numX);
     outputData(goldName_c, &goldQr, &goldQi, &numX_bm);
     unsigned i;
+
     for(i = 0; i < numK; i++) {
-      inbuff[i] = (word_t) kx[i];
-      inbuff[i + numK] = (word_t) ky[i];
-      inbuff[i + 2 * numK] = (word_t) kz[i];
-      inbuff[i + 3 * numK] = (word_t) phiR[i];
-      inbuff[i + 4 * numK] = (word_t) phiI[i];
+      inbuff_k[i] = (word_t) kx[i];
+      inbuff_k[i + numK] = (word_t) ky[i];
+      inbuff_k[i + 2 * numK] = (word_t) kz[i];
+      inbuff_k[i + 3 * numK] = (word_t) phiR[i];
+      inbuff_k[i + 4 * numK] = (word_t) phiI[i];
     }
 
     for(i = 0; i < numX; i++){
-      inbuff[i + 5 * numK] = (word_t) x[i];
-      inbuff[i + 5 * numK + numX] = (word_t) y[i];
-      inbuff[i + 5 * numK + 2 * numX] = (word_t) z[i];
+      inbuff_x[i] = (word_t) x[i];
+      inbuff_x[i + numX] = (word_t) y[i];
+      inbuff_x[i + 2 * numX] = (word_t) z[i];
     }
 
-    for(unsigned i = 0; i < dma_in_size; i++)
+    for(unsigned i = 0; i < dma_inK_size; i++)
       for(unsigned k = 0; k < VALUES_PER_WORD; k++){
-	mem[i].word[k] = inbuff[i * VALUES_PER_WORD + k];
-	// print it out and put it as input to barec
-	fbc << "in[" << i * VALUES_PER_WORD + k << "] = " <<mem[i].word[k] << ";\n";
-	std::cout << inbuff[i * VALUES_PER_WORD + k] << std::endl;
+	mem[i].word[k] = inbuff_k[i * VALUES_PER_WORD + k];
+      	fbc << "in[" << i * VALUES_PER_WORD + k << "] = " <<mem[i].word[k] << ";\n";
+	//	std::cout << inbuff[i * VALUES_PER_WORD + k] << std::endl;
+      }
+    dma_in_size = dma_inK_size + dma_inX_size;
+    // send x, y, z only once
+    for(unsigned i = dma_inK_size; i < dma_in_size; i++)
+      for(unsigned k = 0; k < VALUES_PER_WORD; k++){
+	mem[i].word[k] = inbuff_x[(i - dma_inK_size) * VALUES_PER_WORD + k];
+       	fbc << "in[" << i * VALUES_PER_WORD + k << "] = " <<mem[i].word[k] << ";\n";
+	//	std::cout << inbuff[i * VALUES_PER_WORD + k] << std::endl;
       }
 
 
@@ -130,6 +157,7 @@ int main(int argc, char **argv) {
 
     // Validate
     uint32_t out_offset = dma_in_size;
+
     for(unsigned i = 0; i < dma_out_size; i++)
 	for(unsigned k = 0; k < VALUES_PER_WORD; k++)
 	    outbuff[i * VALUES_PER_WORD + k] = mem[out_offset + i].word[k];
@@ -162,7 +190,8 @@ int main(int argc, char **argv) {
     // Free memory
 
     free(mem);
-    free(inbuff);
+    free(inbuff_x);
+    free(inbuff_k);
     free(outbuff);
     free(outbuff_gold);
 

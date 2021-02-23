@@ -6,30 +6,62 @@
 #include "hls_math.h"
 #include <cstring>
 
-void load(word_t _inbuff[SIZE_IN_CHUNK_DATA], dma_word_t *in1,
+#define PRL 4
+
+// to get latency info for synthesis
+#define NUMX 4
+#define NUMK 16 
+
+void load(word_t _inbuff[SIZE_IN_CHUNK_DATA], // store x,y,z
+          word_t _inbuff_k[SIZE_IN_K_DATA],
+	  dma_word_t *in1,
           /* <<--compute-params-->> */
 	 const unsigned numX,
 	 const unsigned numK,
-	  dma_info_t &load_ctrl, int chunk, int batch)
+	  dma_info_t &load_ctrl, int chunk, int batch,
+	  bool *load_k)
 {
 load_data:
 
-    const unsigned length = round_up(3*numX + 5*numK, VALUES_PER_WORD) / 1;
-    const unsigned index = length * (batch * 1 + chunk);
+	unsigned dma_length;
+	unsigned dma_index;
+	unsigned buff_idx_base;
+	    
+	dma_length = round_up(numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);// must be an even number
 
-    unsigned dma_length = length / VALUES_PER_WORD;
-    unsigned dma_index = index / VALUES_PER_WORD;
+	for(unsigned n=0; n<5; n++){
+	  // every seperate memory needs to be configured once.
+    	        dma_index =  n * dma_length;
+		load_ctrl.index = dma_index;
+		load_ctrl.length = dma_length;
+		load_ctrl.size = SIZE_WORD_T;
 
-    load_ctrl.index = dma_index;
-    load_ctrl.length = dma_length;
-    load_ctrl.size = SIZE_WORD_T;
+		for (unsigned i = 0; i < dma_length; i++) {		  
+			buff_idx_base = n * numK + i * VALUES_PER_WORD;
+			load_label0:for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
+		    		_inbuff_k[buff_idx_base + j] = in1[dma_index + i].word[j];
+			}		  
+		}
+	}//end-of-loading-k
 
-    for (unsigned i = 0; i < dma_length; i++) {
-    load_label0:for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-	    _inbuff[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-    	}
-    }
+	dma_length = round_up(numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);// must be an even number
+
+	for(unsigned m=0; m<3; m++){
+	  // every seperate memory needs to be configured once.
+		dma_index =  round_up(5 * numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1) + m * dma_length;
+		load_ctrl.index = dma_index;
+		load_ctrl.length = dma_length;
+		load_ctrl.size = SIZE_WORD_T;
+
+		for (unsigned i = 0; i < dma_length; i++) {		  
+			buff_idx_base = m * numX + i * VALUES_PER_WORD;
+			load_label1:for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
+		    		_inbuff[buff_idx_base + j] = in1[dma_index + i].word[j];
+			}		  
+		}
+	}//end-of-loading-x
 }
+
 
 void store(word_t _outbuff[SIZE_OUT_CHUNK_DATA], dma_word_t *out,
           /* <<--compute-params-->> */
@@ -59,64 +91,100 @@ store_data:
 }
 
 
+
 void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
+             word_t _inbuff_k[SIZE_IN_K_DATA],
              /* <<--compute-params-->> */
-	 const unsigned numX,
-	 const unsigned numK,
+	     const unsigned numX,
+	     const unsigned numK,
              word_t _outbuff[SIZE_OUT_CHUNK_DATA])
 {
   // TODO implement compute functionality
  compute_data:
+  //  const unsigned paral = 4;
   const word_t PI2 = 6.2831853071796;
   const word_t HALF_PI = ((word_t) (0.25)) * PI2;
-  word_t x, y, z;
-  word_t kx, ky, kz, phiR, phiI;
-  word_t expArg, phiMag;
-  word_t cosArg, sinArg;
-  word_t Qracc, Qiacc;
-  unsigned indexX;
-  const unsigned NUMK_BATCH = 8;
-  const unsigned ITER_K = 2; // numK/8
 
- compute_label_x:for(indexX = 0; indexX < numX; indexX++)
+
+  word_t x, y, z;
+
+  word_t kx[PRL], ky[PRL], kz[PRL], phiR[PRL], phiI[PRL];
+  word_t expArg[PRL], phiMag[PRL];
+  word_t cosArg[PRL], sinArg[PRL];
+
+  word_t Qracc_p[PRL], Qiacc_p[PRL];
+  word_t Qracc, Qiacc;
+
+#pragma HLS array_partition variable=kx complete
+#pragma HLS array_partition variable=ky complete
+#pragma HLS array_partition variable=kz complete
+#pragma HLS array_partition variable=phiR complete
+#pragma HLS array_partition variable=phiI complete
+#pragma HLS array_partition variable=expArg complete
+#pragma HLS array_partition variable=phiMag complete
+#pragma HLS array_partition variable=cosArg complete
+#pragma HLS array_partition variable=sinArg complete
+#pragma HLS array_partition variable=Qracc_p complete
+#pragma HLS array_partition variable=Qiacc_p complete
+
+ c_label_x:for(unsigned indexX = 0; indexX < NUMX; indexX++)
     {
-      x = _inbuff[5*numK + indexX];
-      y = _inbuff[5*numK + numX + indexX];
-      z = _inbuff[5*numK + 2*numX + indexX];
+      x = _inbuff[indexX];
+      y = _inbuff[numX + indexX];
+      z = _inbuff[2*numX + indexX];
       Qracc = 0;
       Qiacc = 0;
-    compute_label_k:for(unsigned t = 0; t < ITER_K; t++)
+
+    c_label_k:for(unsigned indexK = 0; indexK < NUMK; indexK += PRL)
         {
-	compute_label_inK:for(unsigned indexK = 0; indexK < NUMK_BATCH; indexK++)
-	    {
-#pragma HLS UNROLL factor=4
+#pragma HLS pipeline
+        c_label_k0:for(unsigned i=0; i<PRL; i++) {
+#pragma HLS unroll
+	    unsigned idx = indexK + i;
 
-	      int idx = t * NUMK_BATCH + indexK;
-	      kx = _inbuff[idx];
-	      ky = _inbuff[numK + idx];
-	      kz = _inbuff[numK * 2 + idx];
-	      phiR = _inbuff[numK * 3 + idx];
-	      phiI = _inbuff[numK * 4 + idx];
+	    kx[i] =   _inbuff_k[idx];
+	    ky[i] =   _inbuff_k[idx + numK];
+	    kz[i] =   _inbuff_k[idx + numK * 2];
+	    phiR[i] = _inbuff_k[idx + numK * 3];
+	    phiI[i] = _inbuff_k[idx + numK * 4];
+          }
 
-	      phiMag = phiR * phiR + phiI * phiI;
-	      expArg = PI2 * (kx * x + ky * y + kz * z);
-	      cosArg = hls::cos(expArg);
-	      sinArg = hls::sin(expArg);
-	      Qracc += phiMag * cosArg;
-	      Qiacc += phiMag * sinArg;
-	    }       // end of inner k
-        } // end of outer k
-      _outbuff[indexX ] = Qracc;
-      _outbuff[indexX  + numX] = Qiacc;
-      //   std::cout <<  indexX <<"-th finished!\n" << std::endl;
-    } // end of x
+        c_label_k1:for(unsigned i=0; i<PRL; i++) {
+#pragma HLS unroll
+	    phiMag[i] = phiR[i] * phiR[i] + phiI[i] * phiI[i];
+	    expArg[i] = PI2 * (kx[i] * x + ky[i] * y + kz[i] * z);
+	    cosArg[i] = hls::cos(expArg[i]);
+	    sinArg[i] = hls::sin(expArg[i]);
+	    Qracc_p[i] = phiMag[i] * cosArg[i];
+	    Qiacc_p[i] = phiMag[i] * sinArg[i];
+          }
+          {
+	    Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3];
+	    Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3];
+          }
+
+        } // end of outer k                                                                                                                                  
+
+      _outbuff[indexX] = Qracc;
+      _outbuff[indexX + numX] = Qiacc;
+
+      //      std::cout << "Qr[" << indexX << "] = " << _outbuff[indexX] << std::endl;                                                                       
+      //      std::cout << "Qi[" << indexX << "] = " <<  _outbuff[indexX + numX] << std::endl;                                                               
+    } // end of x                         
+
+
+
 }
+
+
+
 
 void top(dma_word_t *out, dma_word_t *in1,
          /* <<--params-->> */
 	 const unsigned conf_info_numX,
 	 const unsigned conf_info_numK,
-	 dma_info_t &load_ctrl, dma_info_t &store_ctrl)
+ 	 dma_info_t &load_ctrl, 
+	 dma_info_t &store_ctrl)
 {
 
     /* <<--local-params-->> */
@@ -128,22 +196,33 @@ batching:
     for (unsigned b = 0; b < 1; b++)
     {
         // Chunking
+      // first loading all the k-data into PLM
+      
+
+      bool load_k = true;
+
     go:
         for (int c = 0; c < 1; c++)
         {
-            word_t _inbuff[SIZE_IN_CHUNK_DATA];
+            word_t _inbuff[SIZE_IN_CHUNK_DATA]; // store x, y, z
             word_t _outbuff[SIZE_OUT_CHUNK_DATA];
+	    word_t _inbuff_k[SIZE_IN_K_DATA]; // store kx, ky, kz
 
-            load(_inbuff, in1,
+#pragma HLS array_partition variable=_inbuff_k block factor=5
+#pragma HLS array_partition variable=_inbuff block factor=3
+#pragma HLS array_partition variable=_outbuff block factor=2
+
+            load(_inbuff, _inbuff_k, in1,
                  /* <<--args-->> */
 	 	 numX,
 	 	 numK,
-                 load_ctrl, c, b);
-            compute(_inbuff,
+                 load_ctrl, c, b, &load_k);
+
+            compute(_inbuff, _inbuff_k,
                     /* <<--args-->> */
 	 	 numX,
 	 	 numK,
-                    _outbuff);
+		    _outbuff);
             store(_outbuff, out,
                   /* <<--args-->> */
 	 	 numX,

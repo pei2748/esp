@@ -14,11 +14,22 @@
 
 // Data types and constants
 #define VALUES_PER_WORD (DMA_SIZE / DATA_BITWIDTH)
+
+/* add definition of SIZE_IN_K_DATA */
+#if ((SIZE_IN_K_DATA % VALUES_PER_WORD) == 0)
+#define SIZE_IN_K (SIZE_IN_K_DATA / VALUES_PER_WORD)
+#else
+#define SIZE_IN_K (SIZE_IN_K_DATA / VALUES_PER_WORD + 1)
+#endif
+/* *****  */
+
 #if ((SIZE_IN_CHUNK_DATA % VALUES_PER_WORD) == 0)
 #define SIZE_IN_CHUNK (SIZE_IN_CHUNK_DATA / VALUES_PER_WORD)
 #else
 #define SIZE_IN_CHUNK (SIZE_IN_CHUNK_DATA / VALUES_PER_WORD + 1)
 #endif
+
+
 #if ((SIZE_OUT_CHUNK_DATA % VALUES_PER_WORD) == 0)
 #define SIZE_OUT_CHUNK (SIZE_OUT_CHUNK_DATA / VALUES_PER_WORD)
 #else
@@ -75,9 +86,10 @@ void top(dma_word_t *out, dma_word_t *in1,
 	/* <<--params-->> */
 	 const unsigned conf_info_numX,
 	 const unsigned conf_info_numK,
-	 dma_info_t &load_ctrl, dma_info_t &store_ctrl);
+	 dma_info_t &load_ctrl,
+	 dma_info_t &store_ctrl);
 
-void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
-	     word_t _outbuff[SIZE_OUT_CHUNK_DATA]);
+//void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
+//	     word_t _outbuff[SIZE_OUT_CHUNK_DATA]);
 
 #endif
