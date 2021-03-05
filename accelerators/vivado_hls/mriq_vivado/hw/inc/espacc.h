@@ -3,6 +3,9 @@
 #ifndef INC_ESPACC_H
 #define INC_ESPACC_H
 
+#include <gmp.h>
+#define __gmp_const const
+
 #include "../inc/espacc_config.h"
 #include <cstdio>
 
@@ -15,13 +18,6 @@
 // Data types and constants
 #define VALUES_PER_WORD (DMA_SIZE / DATA_BITWIDTH)
 
-/* add definition of SIZE_IN_K_DATA */
-#if ((SIZE_IN_K_DATA % VALUES_PER_WORD) == 0)
-#define SIZE_IN_K (SIZE_IN_K_DATA / VALUES_PER_WORD)
-#else
-#define SIZE_IN_K (SIZE_IN_K_DATA / VALUES_PER_WORD + 1)
-#endif
-/* *****  */
 
 #if ((SIZE_IN_CHUNK_DATA % VALUES_PER_WORD) == 0)
 #define SIZE_IN_CHUNK (SIZE_IN_CHUNK_DATA / VALUES_PER_WORD)

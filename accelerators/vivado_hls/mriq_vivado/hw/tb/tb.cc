@@ -54,18 +54,33 @@ int main(int argc, char **argv) {
     dma_size = dma_inX_size + dma_inK_size + dma_out_size;
 
     dma_word_t *mem=(dma_word_t*) malloc(dma_size * sizeof(dma_word_t));
+
     word_t *inbuff_x=(word_t*) malloc(inX_size * sizeof(word_t));
     word_t *inbuff_k=(word_t*) malloc(inK_size * sizeof(word_t));
 
     word_t *outbuff=(word_t*) malloc(out_size * sizeof(word_t));
     word_t *outbuff_gold= (word_t*) malloc(out_size * sizeof(word_t));
+
+    // suppose we have 8 transaction, kx~phiI, x~z
+    //    dma_info_t *load  = (dma_info_t*) malloc(8 * sizeof(dma_info_t));
+    //dma_info_t *store = (dma_info_t*) malloc(2 * sizeof(dma_info_t));
+
+
     dma_info_t load;
     dma_info_t store;
+
+
+
 
     // Prepare input data
     std::string inputName =  "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_small.bin";
     std::string goldName =   "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_small.out";
     std::string data4barec = "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_barec.h";
+
+
+//    std::string inputName =  "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_32_x4_k64.bin";
+//    std::string goldName =   "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_32_x4_k64.out";
+//    std::string data4barec = "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_32_x4_k64_barec.h";
 
     char inputName_c[inputName.size() + 1];
     std::copy(inputName.begin(), inputName.end(), inputName_c);
@@ -153,7 +168,7 @@ int main(int argc, char **argv) {
         /* <<--args-->> */
 	 	 numX,
 	 	 numK,
-        load, store);
+        load, store); // load, store are pointers
 
     // Validate
     uint32_t out_offset = dma_in_size;
@@ -190,6 +205,7 @@ int main(int argc, char **argv) {
     // Free memory
 
     free(mem);
+
     free(inbuff_x);
     free(inbuff_k);
     free(outbuff);
