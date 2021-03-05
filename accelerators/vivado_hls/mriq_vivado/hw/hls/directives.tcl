@@ -31,5 +31,5 @@ set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top"
 set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _inbuff_y
 set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _inbuff_z
 
-#set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _outbuff_Qr
-#set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _outbuff_Qi
+set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _outbuff_Qr
+set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _outbuff_Qi

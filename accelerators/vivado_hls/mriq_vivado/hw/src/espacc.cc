@@ -134,7 +134,7 @@ load_data:
 }
 
 
-void store(word_t _outbuff[SIZE_OUT_CHUNK_DATA],
+void store(word_t _outbuff_Qr[NUMX], word_t _outbuff_Qi[NUMX],
 	   dma_word_t *out,
           /* <<--compute-params-->> */
 	 const unsigned numX,
@@ -150,33 +150,33 @@ store_data:
 
     unsigned dma_length = length / VALUES_PER_WORD;
     unsigned dma_index = index / VALUES_PER_WORD;
-    //    unsigned dma_length_x = round_up(numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);// must be an even number
+    unsigned dma_length_x = round_up(numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
 
     store_ctrl.index = dma_index;
     store_ctrl.length = dma_length;
     store_ctrl.size = SIZE_WORD_T;
 
-    for (unsigned i = 0; i < dma_length; i++) {
+    for (unsigned i = 0; i < dma_length_x; i++) {
 		  for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
 		  #pragma HLS unroll
-		       out[dma_index + i].word[j] = _outbuff[i * VALUES_PER_WORD + j];
+		       out[dma_index + i].word[j] = _outbuff_Qr[i * VALUES_PER_WORD + j];
 		}
     }
-#if(0)
-    dma_index += dma_length;
-    store_ctrl.index = dma_index;
-    store_ctrl.length = dma_length;
-    store_ctrl.size = SIZE_WORD_T;
+
+    dma_index += dma_length_x;
+//    store_ctrl.index = dma_index;
+//    store_ctrl.length = dma_length;
+//    store_ctrl.size = SIZE_WORD_T;
 
 
-    for (unsigned i = 0; i < dma_length; i++) {
+    for (unsigned i = 0; i < dma_length_x; i++) {
 		  for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
 		  #pragma HLS unroll
 		       out[dma_index + i].word[j] = _outbuff_Qi[i * VALUES_PER_WORD + j];
 		}
     }
 
-#endif
+    //#endif
 
 }
 
@@ -193,8 +193,8 @@ void compute(word_t _inbuff_x[NUMX],
              /* <<--compute-params-->> */
 	     const unsigned numX,
 	     const unsigned numK,
-	     //             word_t _outbuff_Qr[NUMX],
-             word_t _outbuff[SIZE_OUT_CHUNK_DATA])
+             word_t _outbuff_Qr[NUMX],
+             word_t _outbuff_Qi[NUMX])
 {
   // TODO implement compute functionality
  compute_data:
@@ -267,8 +267,8 @@ void compute(word_t _inbuff_x[NUMX],
 //      _outbuff_Qr[indexX] = Qracc;
 //      _outbuff_Qi[indexX] = Qiacc;
 
-      _outbuff[indexX] = Qracc;
-      _outbuff[indexX + numX] = Qiacc;
+      _outbuff_Qr[indexX] = Qracc;
+      _outbuff_Qi[indexX] = Qiacc;
 
 
     } // end of x                         
@@ -321,8 +321,11 @@ batching:
 #pragma HLS array_partition variable=_inbuff_phiI block factor=4
 	  
 	  //	  word_t _outbuff_Qr[NUMX];
-	  word_t _outbuff[SIZE_OUT_CHUNK_DATA];
-#pragma HLS array_partition variable=_outbuff block factor=2
+	  word_t _outbuff_Qr[NUMX];
+	  word_t _outbuff_Qi[NUMX];
+
+
+	  //#pragma HLS array_partition variable=_outbuff block factor=2
 
             load(_inbuff_x,_inbuff_y,_inbuff_z,
 		 _inbuff_kx,_inbuff_ky, _inbuff_kz, _inbuff_phiR, _inbuff_phiI, 
@@ -337,8 +340,8 @@ batching:
                     /* <<--args-->> */
 	 	 numX,
 	 	 numK,
-		    _outbuff);
-            store(_outbuff, out,
+		    _outbuff_Qr, _outbuff_Qi);
+            store(_outbuff_Qr, _outbuff_Qi, out,
                   /* <<--args-->> */
 	 	 numX,
 	 	 numK,
