@@ -12,6 +12,8 @@
 #define NUMX 4
 #define NUMK 16 
 
+void load_one_var(word_t array[], unsigned dma_index, unsigned dma_length, dma_word_t *in1);
+void store_one_var(word_t array[], unsigned dma_index, unsigned dma_length, dma_word_t *out);
 
 void load(word_t _inbuff_x[NUMX],
 	  word_t _inbuff_y[NUMX],
@@ -29,7 +31,8 @@ void load(word_t _inbuff_x[NUMX],
 	  bool *load_k)
 {
 load_data:
-	unsigned dma_length;
+  //        unsigned dma_length_allK, dma_length_allX;
+        unsigned dma_length;
 	unsigned dma_length_x, dma_length_k;
 	unsigned dma_index;
 
@@ -37,6 +40,10 @@ load_data:
 	// round_up would always gets the same number of numX, no matter the value_per_word.
 
 	dma_length = round_up(3*numX+5*numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
+
+	//	dma_length_allK = round_up(5*numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
+	//	dma_length_allX = round_up(3*numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
+
 	dma_length_x = round_up(numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);// must be an even number
 	dma_length_k = round_up(numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);// must be an even number
 
@@ -51,84 +58,36 @@ load_data:
 	load_ctrl.length = dma_length;
 	load_ctrl.size = SIZE_WORD_T;
 
-	for (unsigned i = 0; i < dma_length_k; i++) {		  
-		for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS unroll
-		  	_inbuff_kx[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-		}		  
-	}
 
-	// ********************** load ky ****************************//
+	load_one_var(_inbuff_kx, dma_index, dma_length_k, in1);
 
-	dma_index += dma_length_k;
+        dma_index += dma_length_k;
+        load_one_var(_inbuff_ky, dma_index, dma_length_k, in1);
 
-	for (unsigned i = 0; i < dma_length_k; i++) {		  
-		for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS unroll
-		  	_inbuff_ky[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-		}		  
-	}
+        dma_index += dma_length_k;
+        load_one_var(_inbuff_kz, dma_index, dma_length_k, in1);
 
-	// ********************** load kz ****************************//
-	dma_index += dma_length_k;
-	for (unsigned i = 0; i < dma_length_k; i++) {		  
-		for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS unroll
-		  	_inbuff_kz[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-		}		  
-	}
+        dma_index += dma_length_k;
+        load_one_var(_inbuff_phiR, dma_index, dma_length_k, in1);
 
-	// ********************** load phiR ****************************//
-	dma_index += dma_length_k;
-	for (unsigned i = 0; i < dma_length_k; i++) {		  
-		for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-		  #pragma HLS unroll
-		  _inbuff_phiR[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-		}		  
-	}
+        dma_index += dma_length_k;
+        load_one_var(_inbuff_phiI, dma_index, dma_length_k, in1);
 
-	// ********************** load phiI ****************************//
-	dma_index += dma_length_k;
-	for (unsigned i = 0; i < dma_length_k; i++) {		  
-		for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS unroll
-		  	_inbuff_phiI[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-		}		  
-	}
 
 	// ********************** load x ****************************//
-	dma_index +=  dma_length_k;
+//        dma_index =  dma_length_allK;
+//        load_ctrl.index = dma_index;
+//        load_ctrl.length = dma_length_allX; // one batch of allX                                                                                             
+//        load_ctrl.size = SIZE_WORD_T;
+        dma_index += dma_length_k;
+        load_one_var(_inbuff_x, dma_index, dma_length_x, in1);
 
-//
-	for (unsigned i = 0; i < dma_length_x; i++) {		  
-		for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS unroll
-		  	_inbuff_x[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-			//	std::cout << "x[" << i * VALUES_PER_WORD + j << "] = " << _inbuff_x[i * VALUES_PER_WORD + j] << std::endl;
-		}		  
-	}
+        dma_index += dma_length_x;
+        load_one_var(_inbuff_y, dma_index, dma_length_x, in1);
 
-                                                                       
-	// ********************** load y ****************************//
-	dma_index += dma_length_x; 
-	//length and size are the same.
+        dma_index += dma_length_x;
+        load_one_var(_inbuff_z, dma_index, dma_length_x, in1);
 
-	for (unsigned i = 0; i < dma_length_x; i++) {		  
-		for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS unroll
-		  	_inbuff_y[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-		}		  
-	}
-	// ********************** load z ****************************//
-	dma_index += dma_length_x; 
-	//length and size are the same.
-
-	for (unsigned i = 0; i < dma_length_x; i++) {		  
-		for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS unroll
-		  	_inbuff_z[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-		}		  
-	}
 
 
 }
@@ -142,7 +101,6 @@ void store(word_t _outbuff_Qr[NUMX], word_t _outbuff_Qi[NUMX],
 	   dma_info_t &store_ctrl, int chunk, int batch)
 {
 store_data:
-
     const unsigned length = round_up(2 * numX, VALUES_PER_WORD);
     const unsigned store_offset = round_up(3*numX + 5*numK, VALUES_PER_WORD) * 1;
     const unsigned out_offset = store_offset;
@@ -156,27 +114,10 @@ store_data:
     store_ctrl.length = dma_length;
     store_ctrl.size = SIZE_WORD_T;
 
-    for (unsigned i = 0; i < dma_length_x; i++) {
-		  for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-		  #pragma HLS unroll
-		       out[dma_index + i].word[j] = _outbuff_Qr[i * VALUES_PER_WORD + j];
-		}
-    }
 
+    store_one_var(_outbuff_Qr, dma_index, dma_length_x, out);
     dma_index += dma_length_x;
-//    store_ctrl.index = dma_index;
-//    store_ctrl.length = dma_length;
-//    store_ctrl.size = SIZE_WORD_T;
-
-
-    for (unsigned i = 0; i < dma_length_x; i++) {
-		  for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-		  #pragma HLS unroll
-		       out[dma_index + i].word[j] = _outbuff_Qi[i * VALUES_PER_WORD + j];
-		}
-    }
-
-    //#endif
+    store_one_var(_outbuff_Qi, dma_index, dma_length_x, out);
 
 }
 
@@ -348,4 +289,30 @@ batching:
                   store_ctrl, c, b);
         }
     }
+}
+
+
+
+
+void load_one_var(word_t array[], unsigned dma_index, unsigned dma_length, dma_word_t *in1)
+{
+  for (unsigned i = 0; i < dma_length; i++) {
+    //#pragma HLS loop_tripcount min=2 max=16 avg=8                                                                                                     
+    for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
+#pragma HLS loop_unroll
+      array[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
+    }
+  }
+}
+
+
+void store_one_var(word_t array[], unsigned dma_index, unsigned dma_length, dma_word_t *out)
+{
+  for (unsigned i = 0; i < dma_length; i++) {
+    //#pragma HLS loop_tripcount min=2 max=16 avg=8                                                                                                     
+    for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
+#pragma HLS loop_unroll
+      out[dma_index + i].word[j] =  array[i * VALUES_PER_WORD + j];
+    }
+  }
 }
