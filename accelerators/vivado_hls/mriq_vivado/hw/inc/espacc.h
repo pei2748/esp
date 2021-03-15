@@ -82,6 +82,8 @@ void top(dma_word_t *out, dma_word_t *in1,
 	/* <<--params-->> */
 	 const unsigned conf_info_numX,
 	 const unsigned conf_info_numK,
+	 const unsigned conf_info_num_batch_x,
+	 const unsigned conf_info_batch_size_x,
 	 dma_info_t &load_ctrl,
 	 dma_info_t &store_ctrl);
 

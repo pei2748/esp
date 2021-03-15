@@ -5,15 +5,58 @@
 #include "hls_stream.h"
 #include "hls_math.h"
 #include <cstring>
+#include "espacc_utils.h" // dma_read and dma_write
 
 #define PRL 4
 
-// to get latency info for synthesis
+// to get latency info for synthesis analysis
 #define NUMX 4
 #define NUMK 16 
 
-void load_one_var(word_t array[], unsigned dma_index, unsigned dma_length, dma_word_t *in1);
-void store_one_var(word_t array[], unsigned dma_index, unsigned dma_length, dma_word_t *out);
+
+void config_dma(dma_index_load_t &dma_index_load,
+		dma_length_load_t &dma_length_load,
+		dma_index_store_t &dma_index_store,
+		dma_length_store_t &dma_length_store,
+		const unsigned numX,
+		const unsigned numK,		
+		unsigned chunk, unsigned batch)	    
+
+{
+  const unsigned store_offset = round_up(3*numX + 5*numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
+  const unsigned dma_length_x = round_up(numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
+  const unsigned dma_length_k = round_up(numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
+	  // configure dma index for load process
+	  dma_index_load.kx = 0;
+	  dma_index_load.ky = dma_length_k;
+	  dma_index_load.kz = dma_length_k * 2;
+	  dma_index_load.phiR = dma_length_k * 3;
+	  dma_index_load.phiI = dma_length_k * 4;
+
+	  dma_index_load.x = dma_length_k * 5;
+	  dma_index_load.y = dma_length_k * 5 + dma_length_x;
+	  dma_index_load.z = dma_length_k * 5 + dma_length_x * 2;
+
+	  // configure dma index for store process
+	  dma_index_store.Qr = store_offset + dma_length_x * 2 * chunk;
+	  dma_index_store.Qi = store_offset + dma_length_x * (2 * chunk + 1);
+
+
+	  // configure dma length for load process
+	  dma_length_load.kx = dma_length_k;
+	  dma_length_load.ky = dma_length_k;
+	  dma_length_load.kz = dma_length_k;
+	  dma_length_load.phiR = dma_length_k;
+	  dma_length_load.phiI = dma_length_k;
+
+	  dma_length_load.x = dma_length_x;
+	  dma_length_load.y = dma_length_x;
+	  dma_length_load.z = dma_length_x;
+
+	  // configure dma length for store process
+	  dma_length_store.Qr = dma_length_x;
+	  dma_length_store.Qi = dma_length_x;
+}
 
 void load(word_t _inbuff_x[NUMX],
 	  word_t _inbuff_y[NUMX],
@@ -25,69 +68,81 @@ void load(word_t _inbuff_x[NUMX],
 	  word_t _inbuff_phiI[NUMK],
 	  dma_word_t *in1,
           /* <<--compute-params-->> */
-	 const unsigned numX,
-	 const unsigned numK,
-	  dma_info_t &load_ctrl, int chunk, int batch,
+	  const unsigned numX,
+	  const unsigned numK,
+	  dma_length_load_t dma_length_load,
+	  dma_index_load_t dma_index_load,
+	  dma_info_t &load_ctrl, 
+	  int chunk, int batch,
 	  bool *load_k)
 {
-load_data:
-  //        unsigned dma_length_allK, dma_length_allX;
-        unsigned dma_length;
-	unsigned dma_length_x, dma_length_k;
-	unsigned dma_index;
-
-	// numX and numK are always even numbers
-	// round_up would always gets the same number of numX, no matter the value_per_word.
-
-	dma_length = round_up(3*numX+5*numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
-
-	//	dma_length_allK = round_up(5*numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
-	//	dma_length_allX = round_up(3*numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
-
-	dma_length_x = round_up(numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);// must be an even number
-	dma_length_k = round_up(numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);// must be an even number
+ load_data:
 
 
-	// ********************** load kx ****************************//
 
-	//	for(unsigned oo=0; oo< VALUES_PER_WORD; oo++) {
+  load_ctrl.index = dma_index_load.kx;
+  load_ctrl.length = dma_length_load.kx;
+  load_ctrl.size = SIZE_WORD_T;  
 
-	dma_index = 0;
+  ap_wait(); //this one is necessary.
+            dma_read(_inbuff_kx, dma_index_load.kx, dma_length_load.kx, in1);
+  ap_wait(); // this one is necessary
 
-	load_ctrl.index = dma_index;
-	load_ctrl.length = dma_length;
-	load_ctrl.size = SIZE_WORD_T;
+  load_ctrl.index = dma_index_load.ky;
+  load_ctrl.length = dma_length_load.ky;
+  load_ctrl.size = SIZE_WORD_T;
 
+  ap_wait();
+  
+          dma_read(_inbuff_ky, dma_index_load.ky, dma_length_load.ky, in1);
 
-	load_one_var(_inbuff_kx, dma_index, dma_length_k, in1);
+  ap_wait();
+  load_ctrl.index = dma_index_load.kz;
+  load_ctrl.length = dma_length_load.kz;
+  load_ctrl.size = SIZE_WORD_T;
 
-        dma_index += dma_length_k;
-        load_one_var(_inbuff_ky, dma_index, dma_length_k, in1);
+  ap_wait();
+            dma_read(_inbuff_kz, dma_index_load.kz, dma_length_load.kz, in1);
+  ap_wait();
 
-        dma_index += dma_length_k;
-        load_one_var(_inbuff_kz, dma_index, dma_length_k, in1);
+  load_ctrl.index = dma_index_load.phiR;
+  load_ctrl.length = dma_length_load.phiR;
+  load_ctrl.size = SIZE_WORD_T;
 
-        dma_index += dma_length_k;
-        load_one_var(_inbuff_phiR, dma_index, dma_length_k, in1);
+  ap_wait();
+            dma_read(_inbuff_phiR, dma_index_load.phiR, dma_length_load.phiR, in1);
+  ap_wait();
 
-        dma_index += dma_length_k;
-        load_one_var(_inbuff_phiI, dma_index, dma_length_k, in1);
+  load_ctrl.index = dma_index_load.phiI;
+  load_ctrl.length = dma_length_load.phiI;
+  load_ctrl.size = SIZE_WORD_T;
 
+  ap_wait();
+            dma_read(_inbuff_phiI, dma_index_load.phiI, dma_length_load.phiI, in1);
+  ap_wait();
 
-	// ********************** load x ****************************//
-//        dma_index =  dma_length_allK;
-//        load_ctrl.index = dma_index;
-//        load_ctrl.length = dma_length_allX; // one batch of allX                                                                                             
-//        load_ctrl.size = SIZE_WORD_T;
-        dma_index += dma_length_k;
-        load_one_var(_inbuff_x, dma_index, dma_length_x, in1);
+  load_ctrl.index = dma_index_load.x;
+  load_ctrl.length = dma_length_load.x;
+  load_ctrl.size = SIZE_WORD_T;
 
-        dma_index += dma_length_x;
-        load_one_var(_inbuff_y, dma_index, dma_length_x, in1);
+  ap_wait();
+            dma_read(_inbuff_x, dma_index_load.x, dma_length_load.x, in1);
+  ap_wait();
 
-        dma_index += dma_length_x;
-        load_one_var(_inbuff_z, dma_index, dma_length_x, in1);
+  load_ctrl.index = dma_index_load.y;
+  load_ctrl.length = dma_length_load.y;
+  load_ctrl.size = SIZE_WORD_T;
 
+  ap_wait();
+            dma_read(_inbuff_y, dma_index_load.y, dma_length_load.y, in1);
+  ap_wait();
+
+  load_ctrl.index = dma_index_load.z;
+  load_ctrl.length = dma_length_load.z;
+  load_ctrl.size = SIZE_WORD_T;
+
+  ap_wait();
+            dma_read(_inbuff_z, dma_index_load.z, dma_length_load.z, in1);
 
 
 }
@@ -95,29 +150,30 @@ load_data:
 
 void store(word_t _outbuff_Qr[NUMX], word_t _outbuff_Qi[NUMX],
 	   dma_word_t *out,
-          /* <<--compute-params-->> */
-	 const unsigned numX,
-	 const unsigned numK,
-	   dma_info_t &store_ctrl, int chunk, int batch)
+	   /* <<--compute-params-->> */
+	   const unsigned numX,
+	   const unsigned numK,
+	  dma_length_store_t dma_length_store,
+	  dma_index_store_t dma_index_store,
+	   dma_info_t &store_ctrl, 
+	   int chunk, int batch)
 {
-store_data:
-    const unsigned length = round_up(2 * numX, VALUES_PER_WORD);
-    const unsigned store_offset = round_up(3*numX + 5*numK, VALUES_PER_WORD) * 1;
-    const unsigned out_offset = store_offset;
-    const unsigned index = out_offset + length * (batch * 1 + chunk);
+ store_data:
 
-    unsigned dma_length = length / VALUES_PER_WORD;
-    unsigned dma_index = index / VALUES_PER_WORD;
-    unsigned dma_length_x = round_up(numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
-
-    store_ctrl.index = dma_index;
-    store_ctrl.length = dma_length;
-    store_ctrl.size = SIZE_WORD_T;
+  store_ctrl.index = dma_index_store.Qr;
+  store_ctrl.length = dma_length_store.Qr;
+  store_ctrl.size = SIZE_WORD_T;
 
 
-    store_one_var(_outbuff_Qr, dma_index, dma_length_x, out);
-    dma_index += dma_length_x;
-    store_one_var(_outbuff_Qi, dma_index, dma_length_x, out);
+  dma_write(_outbuff_Qr, dma_index_store.Qr, dma_length_store.Qr, out);
+  ap_wait();
+
+  store_ctrl.index = dma_index_store.Qi;
+  store_ctrl.length = dma_length_store.Qi;
+  store_ctrl.size = SIZE_WORD_T;
+
+  ap_wait();
+  dma_write(_outbuff_Qi, dma_index_store.Qi, dma_length_store.Qi, out);
 
 }
 
@@ -175,7 +231,7 @@ void compute(word_t _inbuff_x[NUMX],
 
     c_label_k:for(unsigned indexK = 0; indexK < NUMK; indexK += PRL)
         {
-#pragma HLS pipeline
+#pragma HLS pipeline II=2
 
 
         c_label_k0:for(unsigned i=0; i<PRL; i++) {
@@ -205,8 +261,8 @@ void compute(word_t _inbuff_x[NUMX],
           }
 
         } // end of outer k                                                   
-//      _outbuff_Qr[indexX] = Qracc;
-//      _outbuff_Qi[indexX] = Qiacc;
+      //      _outbuff_Qr[indexX] = Qracc;
+      //      _outbuff_Qi[indexX] = Qiacc;
 
       _outbuff_Qr[indexX] = Qracc;
       _outbuff_Qi[indexX] = Qiacc;
@@ -223,32 +279,32 @@ void top(dma_word_t *out, dma_word_t *in1,
          /* <<--params-->> */
 	 const unsigned conf_info_numX,
 	 const unsigned conf_info_numK,
- 	 dma_info_t &load_ctrl, 
+	 dma_info_t &load_ctrl, 
 	 dma_info_t &store_ctrl)
 {
 
-    /* <<--local-params-->> */
-	 const unsigned numX = conf_info_numX;
-	 const unsigned numK = conf_info_numK;
+  /* <<--local-params-->> */
+  const unsigned numX = conf_info_numX;
+  const unsigned numK = conf_info_numK;
 
-    // Batching
-batching:
-    for (unsigned b = 0; b < 1; b++)
+
+
+  // Batching
+ batching:
+  for (unsigned b = 0; b < 1; b++)
     {
-        // Chunking
-      // first loading all the k-data into PLM
-      
+      // Chunking
 
       bool load_k = true;
 
     go:
-        for (int c = 0; c < 1; c++)
+      for (int c = 0; c < 1; c++)
         {
+
+
 	  word_t _inbuff_x[NUMX];
 	  word_t _inbuff_y[NUMX];
 	  word_t _inbuff_z[NUMX];
-
-
 	  word_t _inbuff_kx[NUMK];
 	  word_t _inbuff_ky[NUMK];
 	  word_t _inbuff_kz[NUMK];
@@ -260,59 +316,52 @@ batching:
 #pragma HLS array_partition variable=_inbuff_kz block factor=4
 #pragma HLS array_partition variable=_inbuff_phiR block factor=4
 #pragma HLS array_partition variable=_inbuff_phiI block factor=4
-	  
-	  //	  word_t _outbuff_Qr[NUMX];
+	    
+	  //  word_t _outbuff_Qr[NUMX];
 	  word_t _outbuff_Qr[NUMX];
 	  word_t _outbuff_Qi[NUMX];
 
 
-	  //#pragma HLS array_partition variable=_outbuff block factor=2
 
-            load(_inbuff_x,_inbuff_y,_inbuff_z,
-		 _inbuff_kx,_inbuff_ky, _inbuff_kz, _inbuff_phiR, _inbuff_phiI, 
-		 in1,
-                 /* <<--args-->> */
-	 	 numX,
-	 	 numK,
-                 load_ctrl, c, b, &load_k);
+	  dma_index_load_t dma_index_load;
+	  dma_length_load_t dma_length_load;
+	  dma_index_store_t dma_index_store;
+	  dma_length_store_t dma_length_store;
 
-            compute(_inbuff_x,_inbuff_y,_inbuff_z,
-		 _inbuff_kx,_inbuff_ky, _inbuff_kz, _inbuff_phiR, _inbuff_phiI, 
-                    /* <<--args-->> */
-	 	 numX,
-	 	 numK,
-		    _outbuff_Qr, _outbuff_Qi);
-            store(_outbuff_Qr, _outbuff_Qi, out,
-                  /* <<--args-->> */
-	 	 numX,
-	 	 numK,
-                  store_ctrl, c, b);
+	  config_dma(dma_index_load,
+		     dma_length_load,
+		     dma_index_store,
+		     dma_length_store,
+		     numX,
+		     numK,
+		     c, b);
+
+	  load(_inbuff_x,_inbuff_y,_inbuff_z,
+	       _inbuff_kx,_inbuff_ky, _inbuff_kz, _inbuff_phiR, _inbuff_phiI, 
+	       in1,
+	       /* <<--args-->> */
+	       numX,
+	       numK,
+	       dma_length_load,
+	       dma_index_load,
+	       load_ctrl, c, b, &load_k);
+
+	  compute(_inbuff_x,_inbuff_y,_inbuff_z,
+		  _inbuff_kx,_inbuff_ky, _inbuff_kz, _inbuff_phiR, _inbuff_phiI, 
+		  /* <<--args-->> */
+		  numX,
+		  numK,
+		  _outbuff_Qr, _outbuff_Qi);
+	  store(_outbuff_Qr, _outbuff_Qi, out,
+		/* <<--args-->> */
+		numX,
+		numK,
+		dma_length_store,
+		dma_index_store,
+		store_ctrl, c, b);
         }
     }
 }
 
 
 
-
-void load_one_var(word_t array[], unsigned dma_index, unsigned dma_length, dma_word_t *in1)
-{
-  for (unsigned i = 0; i < dma_length; i++) {
-    //#pragma HLS loop_tripcount min=2 max=16 avg=8                                                                                                     
-    for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS loop_unroll
-      array[i * VALUES_PER_WORD + j] = in1[dma_index + i].word[j];
-    }
-  }
-}
-
-
-void store_one_var(word_t array[], unsigned dma_index, unsigned dma_length, dma_word_t *out)
-{
-  for (unsigned i = 0; i < dma_length; i++) {
-    //#pragma HLS loop_tripcount min=2 max=16 avg=8                                                                                                     
-    for(unsigned j = 0; j < VALUES_PER_WORD; j++) {
-#pragma HLS loop_unroll
-      out[dma_index + i].word[j] =  array[i * VALUES_PER_WORD + j];
-    }
-  }
-}

@@ -5,6 +5,8 @@
 # <<--directives-param-->>
 set_directive_interface -mode ap_none "top" conf_info_numX
 set_directive_interface -mode ap_none "top" conf_info_numK
+#set_directive_interface -mode ap_none "top" conf_info_num_batch_x
+#set_directive_interface -mode ap_none "top" conf_info_batch_size_x
 
 # Insert here any custom directive
 

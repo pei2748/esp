@@ -29,6 +29,8 @@ static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 /* <<--params-->> */
 const int32_t numX = 4;
 const int32_t numK = 16;
+//const int32_t num_batch_x = 2;
+//const int32_t batch_size_x = 2;
 
 static unsigned in_words_adj;
 static unsigned out_words_adj;
@@ -48,33 +50,37 @@ static unsigned mem_size;
 
 /* User defined registers */
 /* <<--regs-->> */
+
 #define MRIQ_NUMX_REG 0x44
 #define MRIQ_NUMK_REG 0x40
+//#define MRIQ_NUM_BATCH_X_REG 0x44
+//#define MRIQ_BATCH_SIZE_X_REG 0x40
+
 
 
 static int validate_buf(token_t *out, token_t *gold)
 {
   int i;
-  int j;
+
   unsigned errors = 0;
   float diff;
   float error_th = 0.01;
 
-  for (i = 0; i < 1; i++)
-    for (j = 0; j < 2*numX; j++){
-      int idx = i * out_words_adj + j;
-      if(!fx2float(gold[idx], FX_IL) && !fx2float(out[idx], FX_IL))
-	diff = 0;
-      else if(!fx2float(gold[idx], FX_IL))
-	diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
-		  /fx2float(out[idx], FX_IL));
+
+  for (i = 0; i < 2*numX; i++){
+  
+      if(!fx2float(gold[i], FX_IL) && !fx2float(out[i], FX_IL))
+	   diff = 0;
+      else if(!fx2float(gold[i], FX_IL))
+	   diff = fabs((fx2float(gold[i], FX_IL) - fx2float(out[i], FX_IL))
+		  /fx2float(out[i], FX_IL));
       else
-	diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
-		  /fx2float(gold[idx], FX_IL));
+	   diff = fabs((fx2float(gold[i], FX_IL) - fx2float(out[i], FX_IL))
+		  /fx2float(gold[i], FX_IL));
 
       if (diff > error_th)
 	errors++;
-    }
+  }
 
   return errors;
 }
@@ -187,7 +193,8 @@ int main(int argc, char * argv[])
 			/* <<--regs-config-->> */
 		iowrite32(dev, MRIQ_NUMX_REG, numX);
 		iowrite32(dev, MRIQ_NUMK_REG, numK);
-
+//                iowrite32(dev, MRIQ_NUM_BATCH_X_REG, num_batch_x);
+//                iowrite32(dev, MRIQ_BATCH_SIZE_X_REG, batch_size_x);
 			// Flush (customize coherence model here)
 			esp_flush(coherence);
 
