@@ -7,10 +7,14 @@
 #define __gmp_const const
 
 #include "../inc/espacc_config.h"
+
+
 #include <cstdio>
 
 #include <ap_fixed.h>
 #include <ap_int.h>
+#include <ap_utils.h> /* ap_wait() */
+//#include <systemc.h>
 
 #define __round_mask(x, y) ((y)-1)
 #define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
@@ -82,12 +86,11 @@ void top(dma_word_t *out, dma_word_t *in1,
 	/* <<--params-->> */
 	 const unsigned conf_info_numX,
 	 const unsigned conf_info_numK,
-	 const unsigned conf_info_num_batch_x,
-	 const unsigned conf_info_batch_size_x,
 	 dma_info_t &load_ctrl,
 	 dma_info_t &store_ctrl);
 
 //void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
 //	     word_t _outbuff[SIZE_OUT_CHUNK_DATA]);
+
 
 #endif
