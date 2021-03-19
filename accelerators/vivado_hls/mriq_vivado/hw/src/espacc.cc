@@ -25,21 +25,14 @@ void init_parameters(dma_length_load_t &dma_length_load,
     
     const unsigned dma_length_x = round_up(numX, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
     const unsigned dma_length_k = round_up(numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);
-
     store_offset = round_up(3*numX + 5*numK, VALUES_PER_WORD) >> (VALUES_PER_WORD - 1);  
 
-    // configure dma length for load process
-    dma_length_load.kx = dma_length_k;
-    dma_length_load.ky = dma_length_k;
-    dma_length_load.kz = dma_length_k;
-    dma_length_load.phiR = dma_length_k;
-    dma_length_load.phiI = dma_length_k;
 
+    // configure dma length for load process                                                                                                             
     dma_length_load.x = dma_length_x;
-    dma_length_load.y = dma_length_x;
-    dma_length_load.z = dma_length_x;
+    dma_length_load.k = dma_length_k;
 
-    // configure dma length for store process
+    // configure dma length for store process                                                                                                            
     dma_length_store.Qr = dma_length_x;
     dma_length_store.Qi = dma_length_x;
 }
@@ -66,59 +59,56 @@ void load(word_t _inbuff_x[NUMX],
     dma_index_load_t dma_index_load;
 	  
     dma_index_load.kx = 0;
-    dma_index_load.ky = dma_index_load.kx + dma_length_load.kx;
-    dma_index_load.kz = dma_index_load.ky + dma_length_load.ky;
-    dma_index_load.phiR = dma_index_load.kz + dma_length_load.kz;
-    dma_index_load.phiI = dma_index_load.phiR + dma_length_load.phiR;
+    dma_index_load.ky = dma_index_load.kx + dma_length_load.k;
+    dma_index_load.kz = dma_index_load.ky + dma_length_load.k;
+    dma_index_load.phiR = dma_index_load.kz + dma_length_load.k;
+    dma_index_load.phiI = dma_index_load.phiR +  dma_length_load.k;
 
-    // if conditional loading, dma_index of x 
-    dma_index_load.x = dma_length_load.kx + dma_length_load.ky + dma_length_load.kz 
-      + dma_length_load.phiR + dma_length_load.phiI 
-      + (dma_length_load.x + dma_length_load.y + dma_length_load.z) * chunk;
-
+    // if conditional loading, dma_index of x                                                                                                            
+    dma_index_load.x = 5 * dma_length_load.k;
     dma_index_load.y = dma_index_load.x + dma_length_load.x;
-    dma_index_load.z = dma_index_load.y + dma_length_load.y;
+    dma_index_load.z = dma_index_load.y + dma_length_load.x;
 
  load_data:
     load_ctrl.index = dma_index_load.kx;
-    load_ctrl.length = dma_length_load.kx;
+    load_ctrl.length = dma_length_load.k;
     load_ctrl.size = SIZE_WORD_T;  
 
     ap_wait(); //this one is necessary.
-    dma_read(_inbuff_kx, dma_index_load.kx, dma_length_load.kx, in1);
+    dma_read(_inbuff_kx, dma_index_load.kx, dma_length_load.k, in1);
     ap_wait(); // this one is necessary
 
     load_ctrl.index = dma_index_load.ky;
-    load_ctrl.length = dma_length_load.ky;
+    load_ctrl.length = dma_length_load.k;
     load_ctrl.size = SIZE_WORD_T;
 
     ap_wait();
   
-    dma_read(_inbuff_ky, dma_index_load.ky, dma_length_load.ky, in1);
+    dma_read(_inbuff_ky, dma_index_load.ky, dma_length_load.k, in1);
 
     ap_wait();
     load_ctrl.index = dma_index_load.kz;
-    load_ctrl.length = dma_length_load.kz;
+    load_ctrl.length = dma_length_load.k;
     load_ctrl.size = SIZE_WORD_T;
 
     ap_wait();
-    dma_read(_inbuff_kz, dma_index_load.kz, dma_length_load.kz, in1);
+    dma_read(_inbuff_kz, dma_index_load.kz, dma_length_load.k, in1);
     ap_wait();
 
     load_ctrl.index = dma_index_load.phiR;
-    load_ctrl.length = dma_length_load.phiR;
+    load_ctrl.length = dma_length_load.k;
     load_ctrl.size = SIZE_WORD_T;
 
     ap_wait();
-    dma_read(_inbuff_phiR, dma_index_load.phiR, dma_length_load.phiR, in1);
+    dma_read(_inbuff_phiR, dma_index_load.phiR, dma_length_load.k, in1);
     ap_wait();
 
     load_ctrl.index = dma_index_load.phiI;
-    load_ctrl.length = dma_length_load.phiI;
+    load_ctrl.length = dma_length_load.k;
     load_ctrl.size = SIZE_WORD_T;
 
     ap_wait();
-    dma_read(_inbuff_phiI, dma_index_load.phiI, dma_length_load.phiI, in1);
+    dma_read(_inbuff_phiI, dma_index_load.phiI, dma_length_load.k, in1);
     ap_wait();
 
     load_ctrl.index = dma_index_load.x;
@@ -130,19 +120,19 @@ void load(word_t _inbuff_x[NUMX],
     ap_wait();
 
     load_ctrl.index = dma_index_load.y;
-    load_ctrl.length = dma_length_load.y;
+    load_ctrl.length = dma_length_load.x;
     load_ctrl.size = SIZE_WORD_T;
 
     ap_wait();
-    dma_read(_inbuff_y, dma_index_load.y, dma_length_load.y, in1);
+    dma_read(_inbuff_y, dma_index_load.y, dma_length_load.x, in1);
     ap_wait();
 
     load_ctrl.index = dma_index_load.z;
-    load_ctrl.length = dma_length_load.z;
+    load_ctrl.length = dma_length_load.x;
     load_ctrl.size = SIZE_WORD_T;
 
     ap_wait();
-    dma_read(_inbuff_z, dma_index_load.z, dma_length_load.z, in1);
+    dma_read(_inbuff_z, dma_index_load.z, dma_length_load.x, in1);
 
 
 }
@@ -162,7 +152,7 @@ void store(word_t _outbuff_Qr[NUMX], word_t _outbuff_Qi[NUMX],
     // configure dma index for store process
     dma_index_store_t dma_index_store;
     
-    dma_index_store.Qr = store_offset + (dma_length_store.Qr + dma_length_store.Qi) * chunk;
+    dma_index_store.Qr = store_offset;
     dma_index_store.Qi = dma_index_store.Qr + dma_length_store.Qr;
 
 
@@ -298,7 +288,12 @@ void top(dma_word_t *out, dma_word_t *in1,
   dma_length_store_t dma_length_store;
   unsigned store_offset;
 
-  init_parameters(dma_length_load, dma_length_store, store_offset, numX, numK);
+#pragma HLS data_pack variable=dma_length_load
+#pragma HLS data_pack variable=dma_length_store
+
+
+
+  init_parameters(dma_length_load, dma_length_store, store_offset,numX, numK);
   // Batching
 
   batching:

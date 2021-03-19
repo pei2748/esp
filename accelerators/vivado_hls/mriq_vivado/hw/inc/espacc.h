@@ -13,7 +13,7 @@
 
 #include <ap_fixed.h>
 #include <ap_int.h>
-#include <ap_utils.h> /* ap_wait() */
+#include "ap_utils.h" /* ap_wait() */
 //#include <systemc.h>
 
 #define __round_mask(x, y) ((y)-1)
@@ -91,6 +91,41 @@ void top(dma_word_t *out, dma_word_t *in1,
 
 //void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
 //	     word_t _outbuff[SIZE_OUT_CHUNK_DATA]);
+
+typedef struct DMA_index_load{
+
+  unsigned kx;
+  unsigned ky;
+  unsigned kz;
+  unsigned phiR;
+  unsigned phiI;
+  unsigned x;
+  unsigned y;
+  unsigned z;
+
+} dma_index_load_t;
+
+
+typedef struct DMA_length_load {
+
+  unsigned k;
+  unsigned x;
+
+} dma_length_load_t;
+
+typedef struct DMA_index_store{
+
+  unsigned Qr;
+  unsigned Qi;
+} dma_index_store_t;
+
+typedef struct DMA_length_store{
+
+
+  unsigned Qr;
+  unsigned Qi;
+
+} dma_length_store_t;
 
 
 #endif

@@ -25,8 +25,8 @@ set_directive_interface -mode ap_none "top" conf_info_numK
 
 #set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _inbuff_k
 
-
-
+set_directive_loop_tripcount -min 16 -max 16 -avg 16 "top/go"
+set_directive_dataflow "top/go"
 
 
 set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _inbuff_x
@@ -35,3 +35,8 @@ set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top"
 
 set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _outbuff_Qr
 set_directive_array_partition -type cyclic -factor ${unroll_factor} -dim 1 "top" _outbuff_Qi
+
+
+
+
+
