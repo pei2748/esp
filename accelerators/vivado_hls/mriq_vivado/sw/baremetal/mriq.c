@@ -68,18 +68,21 @@ static int validate_buf(token_t *out, token_t *gold)
 
 
   for (i = 0; i < 2*numX; i++){
-  
-      if(!fx2float(gold[i], FX_IL) && !fx2float(out[i], FX_IL))
+    float val = fx2float(out[i], FX_IL);
+    float gval = fx2float(gold[i], FX_IL);
+    if(!gval && !val){
+      //      	   printf("out and gold both are 0\n");
 	   diff = 0;
-      else if(!fx2float(gold[i], FX_IL))
-	   diff = fabs((fx2float(gold[i], FX_IL) - fx2float(out[i], FX_IL))
-		  /fx2float(out[i], FX_IL));
-      else
-	   diff = fabs((fx2float(gold[i], FX_IL) - fx2float(out[i], FX_IL))
-		  /fx2float(gold[i], FX_IL));
+    } else if(!gval) {
+      //           printf("gold is 0\n");
+	   diff = fabs((gval - val)/val);
+    } else {
+      //	   printf("both out and gold are non-zero \n");
+	   diff = fabs((gval - val)/gval);
 
-      if (diff > error_th)
-	errors++;
+    }
+    if (diff > error_th)
+      errors++;
   }
 
   return errors;
