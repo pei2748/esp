@@ -238,7 +238,7 @@ $(VIVADOHLS_ACC-wdir): $(HLS_LOGS)
 
 $(VIVADOHLS_ACC-hls): %-hls : %-wdir
 	$(QUIET_INFO)echo "Running HLS for available implementations of $(@:-hls=)"
-	$(QUIET_MAKE)ACCELERATOR=$(@:-hls=) TECH=$(TECHLIB) ESP_ROOT=$(ESP_ROOT) make -C $(VIVADOHLS_ACC_PATH)/$(@:-hls=)/hw/hls-work-$(TECHLIB) hls | tee $(HLS_LOGS)/$(@:-hls=)_hls.log
+	$(QUIET_MAKE)ACCELERATOR=$(@:-hls=) TECH=$(TECHLIB) ESP_ROOT=$(ESP_ROOT) make -C $(VIVADOHLS_ACC_PATH)/$(@:-hls=)/hw/hls-work-$(TECHLIB) hls -Wnoattributes| tee $(HLS_LOGS)/$(@:-hls=)_hls.log
 	$(QUIET_INFO)echo "Installing available implementations for $(@:-hls=) to $(ESP_ROOT)/tech/$(TECHLIB)/acc/$(@:-hls=)"
 	$(QUIET_MAKE)ACCELERATOR=$(@:-hls=) TECH=$(TECHLIB) ESP_ROOT=$(ESP_ROOT) make -C $(VIVADOHLS_ACC_PATH)/$(@:-hls=)/hw/hls-work-$(TECHLIB) install
 	@if test -e $(ESP_ROOT)/tech/$(TECHLIB)/acc/installed.log; then \
