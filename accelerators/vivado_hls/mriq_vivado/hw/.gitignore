@@ -1,2 +1,5 @@
 mriq
 *.log
+*.bin
+*.out
+test*.h
