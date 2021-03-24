@@ -61,39 +61,80 @@ static unsigned mem_size;
 #define MRIQ_NUM_BATCH_X_REG 0x44
 #define MRIQ_BATCH_SIZE_X_REG 0x40
 
+//#if(0)
+static int validate_buf(token_t *out, token_t *gold)
+{
+  int i;
 
+  unsigned errors = 0;
+  float diff;
+  float error_th = 0.01;
+
+
+  for (i = 0; i < 2*numX; i++){
+
+     
+      float val = fx2float(out[i], FX_IL);
+      if(!gold[i] && !val){
+	printf("out and gold both are 0\n");
+	diff = 0;
+      } else if(!gold[i]) {
+	printf("gold is 0\n");
+	diff = fabs((gold[i] - val)/val);
+      } else {
+	printf("gold is non-zero \n");
+	print_uart_int((int) val); print_uart(" : ");
+	print_uart_int((int) gold[i]); print_uart("\n");
+
+	diff = fabs((gold[i] - val)/gold[i]);
+
+      }
+      if (diff > error_th)
+	errors++;
+  }
+  printf("errors = %d\n", errors);
+  return errors;
+}
+
+//#endif
+#if(0)
 static int validate_buf(token_t *out, token_t *gold)
 {
   int i;
   int j;
   unsigned errors = 0;
   float diff;
-  float error_th = 0.01;
+  float error_th = 0.1;
 
   for (i = 0; i < 1; i++)
     for (j = 0; j < 2*numX; j++){
       int idx = i * out_words_adj + j;
-      if(!fx2float(gold[idx], FX_IL) && !fx2float(out[idx], FX_IL))
+      if(!fx2float(gold[idx], FX_IL) && !fx2float(out[idx], FX_IL)) {
+	printf("out and gold both are 0\n");
         diff = 0;
-      else if(!fx2float(gold[idx], FX_IL))
+      } else if(!fx2float(gold[idx], FX_IL)) {
+	printf("gold is 0\n");
         diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
 		    /fx2float(out[idx], FX_IL));
-      else
+      } else {
+	printf("both out and gold are non-zero \n");
         diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
 		    /fx2float(gold[idx], FX_IL));
+      }
 
       if (diff > error_th)
         errors++;
     }
+  printf("errors = %d\n", errors);
 
   return errors;
 }
-
+#endif
 
 
 static void init_buf (token_t *in, token_t * gold)
 {
-#include "../../hw/data4bm/test_small_4bm.h"
+#include "../../hw/data4bm/test_small_4bm_0.h"
 }
 
 
