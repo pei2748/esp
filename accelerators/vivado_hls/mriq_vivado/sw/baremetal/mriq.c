@@ -27,9 +27,9 @@ static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 #define DEV_NAME "sld,mriq_vivado"
 
 /* <<--params-->> */
-const int32_t numX = 4;
+const int32_t numX = 8;
 const int32_t numK = 16;
-const int32_t num_batch_x = 2;
+const int32_t num_batch_x = 4;
 const int32_t batch_size_x = 2;
 
 static unsigned in_words_adj;
@@ -77,7 +77,8 @@ static int validate_buf(token_t *out, token_t *gold)
            printf("gold is 0\n");
 	   diff = fabs((gval - val)/val);
     } else {
-	   printf("both out and gold are non-zero \n");
+	   printf("gold is non-zero \n");
+	   print_uart_int(val); print_uart("\n");
 	   diff = fabs((gval - val)/gval);
 
     }

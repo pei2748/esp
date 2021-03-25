@@ -17,10 +17,10 @@ int main(int argc, char **argv) {
     printf("****start*****\n");
 
     /* <<--params-->> */
-	 const unsigned numX = 4;
+	 const unsigned numX = 8;
 	 const unsigned numK = 16;
 
-	 const unsigned num_batch_x = 2;
+	 const unsigned num_batch_x = 4;
 	 const unsigned batch_size_x = 2;
 
     uint32_t inX_words_adj;
@@ -78,14 +78,15 @@ int main(int argc, char **argv) {
 
 
     // Prepare input data
+#if(0)
     std::string inputName =  "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_small.bin";
     std::string goldName =   "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_small.out";
     std::string data4barec = "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_barec.h";
+#endif
 
-
-//    std::string inputName =  "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_32_x64_k64.bin";
-//    std::string goldName =   "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_32_x64_k64.out";
-//    std::string data4barec = "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_barec.h";
+    std::string inputName =  "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_32_x8_k16.bin";
+    std::string goldName =   "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_32_x8_k16.out";
+    std::string data4barec = "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/tb/test_barec.h";
 
     char inputName_c[inputName.size() + 1];
     std::copy(inputName.begin(), inputName.end(), inputName_c);

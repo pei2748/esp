@@ -101,7 +101,7 @@ void load(word_t _inbuff_x[BATCH_SIZE_X],
 	dma_read(_inbuff_phiI, dma_index, dma_length_load.k, in1);
 	dma_index += dma_length_load.k;
 
-	load_k = false;
+      	load_k = false;
     }
 
 
