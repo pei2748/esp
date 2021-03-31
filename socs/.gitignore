@@ -101,6 +101,5 @@ S64esp
 
 zynq/
 
-xilinx-vc707-dct/
-xilinx-vc707-fft/
-xilinx-707-ms/
+
+xilinx-707-02/
