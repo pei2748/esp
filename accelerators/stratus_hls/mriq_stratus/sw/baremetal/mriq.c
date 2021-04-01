@@ -94,8 +94,7 @@ static int validate_buf(token_t *out, token_t *gold)
 
 static void init_buf (token_t *in, token_t * gold)
 {
-  //#include "../../hw/data4bm/test_small_4bm_0.h"
-#include "test_32_x64_k64_bm.h"
+#include "../../hw/data4bm/test_32_x64_k64_bm.h"
 }
 
 
