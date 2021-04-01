@@ -29,12 +29,12 @@ static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 #define DEV_NAME "sld,mriq_stratus"
 
 /* <<--params-->> */
-const int32_t numX = 4;
-const int32_t numK = 16;
-const int32_t num_batch_k = 1;
+const int32_t numX = 64;
+const int32_t numK = 64;
+const int32_t num_batch_k = 4;
 const int32_t batch_size_k = 16;
-const int32_t num_batch_x = 1;
-const int32_t batch_size_x = 4;
+const int32_t num_batch_x = 4;
+const int32_t batch_size_x = 16;
 
 static unsigned in_words_adj;
 static unsigned out_words_adj;
@@ -70,71 +70,32 @@ static int validate_buf(token_t *out, token_t *gold)
   float diff;
   float error_th = 0.01;
 
-
   for (i = 0; i < 2*numX; i++){
+    float val = fx2float(out[i], FX_IL);
+    float goldfp = fx2float(gold[i], FX_IL);
 
-     
-      float val = fx2float(out[i], FX_IL);
-      if(!gold[i] && !val){
-	printf("out and gold both are 0\n");
-	diff = 0;
-      } else if(!gold[i]) {
-	printf("gold is 0\n");
-	diff = fabs((gold[i] - val)/val);
-      } else {
-	printf("gold is non-zero \n");
-	print_uart_int((int) val); print_uart(" : ");
-	print_uart_int((int) gold[i]); print_uart("\n");
+    if(!val && !goldfp)
+      diff = 0;
+    else if(!goldfp)
+      diff = fabs((goldfp - val)/val);
+    else {
+      diff = fabs((goldfp - val)/goldfp);
+      printf("i = %d, out = %ld, gold = %ld\n", i, out[i], gold[i]);
 
-	diff = fabs((gold[i] - val)/gold[i]);
-
-      }
-      if (diff > error_th)
-	errors++;
-  }
-  printf("errors = %d\n", errors);
-  return errors;
-}
-
-//#endif
-#if(0)
-static int validate_buf(token_t *out, token_t *gold)
-{
-  int i;
-  int j;
-  unsigned errors = 0;
-  float diff;
-  float error_th = 0.1;
-
-  for (i = 0; i < 1; i++)
-    for (j = 0; j < 2*numX; j++){
-      int idx = i * out_words_adj + j;
-      if(!fx2float(gold[idx], FX_IL) && !fx2float(out[idx], FX_IL)) {
-	printf("out and gold both are 0\n");
-        diff = 0;
-      } else if(!fx2float(gold[idx], FX_IL)) {
-	printf("gold is 0\n");
-        diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
-		    /fx2float(out[idx], FX_IL));
-      } else {
-	printf("both out and gold are non-zero \n");
-        diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
-		    /fx2float(gold[idx], FX_IL));
-      }
-
-      if (diff > error_th)
-        errors++;
     }
-  printf("errors = %d\n", errors);
+    if (diff > error_th)
+      errors++;
+  }
 
   return errors;
 }
-#endif
+
 
 
 static void init_buf (token_t *in, token_t * gold)
 {
-#include "../../hw/data4bm/test_small_4bm_0.h"
+  //#include "../../hw/data4bm/test_small_4bm_0.h"
+#include "test_32_x64_k64_bm.h"
 }
 
 
@@ -163,8 +124,13 @@ int main(int argc, char * argv[])
 	out_len = out_words_adj * (1);
 	in_size = in_len * sizeof(token_t);
 	out_size = out_len * sizeof(token_t);
-	out_offset  = in_len;
+
+	// previously is in_len
+       	out_offset  = in_len << 1; 
+	//	out_offset  = in_len; 
+
 	mem_size = (out_offset * sizeof(token_t)) + out_size;
+
 
 
 	// Search for the device

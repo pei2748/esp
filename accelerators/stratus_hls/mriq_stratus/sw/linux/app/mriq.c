@@ -29,7 +29,7 @@ static unsigned size;
 
 #define PIx2 6.2831853071795864769252867665590058f
 
-static void sw_comp(int numK, int numX,
+static void sw_comp(int numK, int batch_size_x, int num_batch_x,
               float *kx, float *ky, float *kz,
               float *x, float *y, float *z,
               float *phiR, float *phiI,
@@ -41,25 +41,31 @@ static void sw_comp(int numK, int numX,
   float phiMag;
   int indexK, indexX;
   
+  for (int b = 0; b < num_batch_x; b++) {
+   
+       int base = b * batch_size_x;
 
-  for (indexX = 0; indexX < numX; indexX++) {
-    // Sum the contributions to this point over all frequencies
-    float Qracc = 0.0f;
-    float Qiacc = 0.0f;
-    for (indexK = 0; indexK < numK; indexK++) {
-      phiMag = phiR[indexK]*phiR[indexK] + phiI[indexK]*phiI[indexK];
+       for (indexX = 0; indexX < batch_size_x; indexX++) {
+           // Sum the contributions to this point over all frequencies
+           float Qracc = 0.0f;
+	   float Qiacc = 0.0f;
 
-      expArg = PIx2 * (kx[indexK] * x[indexX] +
-                       ky[indexK] * y[indexX] +
-                       kz[indexK] * z[indexX]);
-      cosArg = cosf(expArg);
-      sinArg = sinf(expArg);
+	   for (indexK = 0; indexK < numK; indexK++) {
+	     phiMag = phiR[indexK]*phiR[indexK] + phiI[indexK]*phiI[indexK];
 
-      Qracc += phiMag * cosArg;
-      Qiacc += phiMag * sinArg;
-    }
-    out[indexX] = Qracc;
-    out[numX + indexX] = Qiacc;
+	     expArg = PIx2 * (kx[indexK] * x[base + indexX] +
+			      ky[indexK] * y[base + indexX] +
+			      kz[indexK] * z[base + indexX]);
+	     cosArg = cosf(expArg);
+	     sinArg = sinf(expArg);
+
+	     Qracc += phiMag * cosArg;
+	     Qiacc += phiMag * sinArg;
+	   }
+
+	   out[base * 2 + indexX] = Qracc;
+	   out[base * 2 + indexX + batch_size_x] = Qiacc;
+       }
   }
 }
 
@@ -69,26 +75,28 @@ static int validate_buffer(token_t *out, token_t *gold)
 {
 
   int i;
-  int j;
   unsigned errors = 0;
   float diff;
   float error_th = 0.01;
 
-  for (i = 0; i < 1; i++)
-    for (j = 0; j < 2*numX; j++){
-      int idx = i * out_words_adj + j;
-      if(!fx2float(gold[idx], FX_IL) && !fx2float(out[idx], FX_IL))
-        diff = 0;
-      else if(!fx2float(gold[idx], FX_IL))
-        diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
-                    /fx2float(out[idx], FX_IL));
-      else
-        diff = fabs((fx2float(gold[idx], FX_IL) - fx2float(out[idx], FX_IL))
-                    /fx2float(gold[idx], FX_IL));
 
-      if (diff > error_th)
-        errors++;
+  for (i = 0; i < 2*numX; i++){
+
+    float val = fx2float(out[i], FX_IL);
+    float goldfp = fx2float(gold[i], FX_IL);
+
+    if(!val && !goldfp)
+      diff = 0;
+    else if(!goldfp)
+      diff = fabs((goldfp - val)/val);
+    else {
+      diff = fabs((goldfp - val)/goldfp);
+      printf("out = %f, gold = %f\n", val, goldfp);
+
     }
+    if (diff > error_th)
+      errors++;
+  }
 
   return errors;
 }
@@ -119,7 +127,8 @@ static void init_buffer(token_t *in, token_t *gold,
 
 
   for(i=0; i < num_batch_k; i++) {
-      idx_single = i * num_batch_k;
+
+      idx_single = i * batch_size_k;
 
 
       for(j=0; j < batch_size_k; j++)  
@@ -150,23 +159,27 @@ static void init_buffer(token_t *in, token_t *gold,
   
 
   for(i = 0; i < num_batch_x; i++) {
-      idx_single = i * num_batch_x;
+      idx_single = i * batch_size_x;
 
       for(j=0; j < batch_size_x; j++)
 	in[offset_idx + j] = float2fx(x[idx_single + j], FX_IL);
+
       offset_idx += batch_size_x; // 1
 
       for(j=0; j < batch_size_x; j++)
 	in[offset_idx + j] = float2fx(y[idx_single + j], FX_IL);
+
       offset_idx += batch_size_x; // 2
 
       for(j=0; j < batch_size_x; j++)
 	in[offset_idx + j] = float2fx(z[idx_single + j], FX_IL);
+
       offset_idx += batch_size_x; // 3
   }
 
 
   // If golden output is computed from code, then this part should be sw_comp part
+  //#if(0)
   struct timespec ts_start, ts_end;
   unsigned long long sw_ns;
 
@@ -176,7 +189,7 @@ static void init_buffer(token_t *in, token_t *gold,
   printf("\n  ** START SW TESTING **\n");
   gettime(&ts_start);
 
-  sw_comp(numK, numX, \
+  sw_comp(numK, batch_size_x, num_batch_x,
        kx,\
        ky,\
        kz,\
@@ -189,6 +202,7 @@ static void init_buffer(token_t *in, token_t *gold,
   gettime(&ts_end);
   
   sw_ns = ts_subtract(&ts_start, &ts_end);
+
   printf("\n SW exec time : %llu (ns)\n", sw_ns);
   printf("\n  ** Done! **\n\n");
 
@@ -197,23 +211,35 @@ static void init_buffer(token_t *in, token_t *gold,
   for(i = 0; i < 2 * numX; i++) 
     gold[i] = float2fx(gold_fp[i], FX_IL);
 
+  free(gold_fp);
+
+  //#endif
 
   // read golden output from files and store to gold buf 
+ #if(0)
+  float *Qr, *Qi;
+  outputData(goldFile, &Qr, &Qi, &numX_bm);
 
-//  float *Qr, *Qi;
-//  outputData(goldFile, &Qr, &Qi, &numX_bm);
-//
-//  for(i = 0; i < numX; i++) {
-//    gold[i] = float2fx(Qr[i], FX_IL);
-//    gold[i + numX] = float2fx(Qi[i], FX_IL);
-//  }
-//  // if read golden output from file
-//  free(Qr);
-//  free(Qi);
-//
+  for (int b = 0; b < num_batch_x; b++) {
+    unsigned base_in = 2 * b * batch_size_x;
+
+    unsigned base = b * batch_size_x;
+
+    for (int i = 0; i < batch_size_x; i++)
+      gold[base_in + i] =  float2fx(Qr[base + i], FX_IL);
+    base_in += batch_size_x;
+    for (int i = 0; i < batch_size_x; i++)
+      gold[base_in + i] = float2fx(Qi[base + i], FX_IL);
+
+  }
 
 
 
+
+    // if read golden output from file
+  free(Qr);
+  free(Qi);
+ #endif
 
   free(x);
   free(y);
@@ -224,7 +250,7 @@ static void init_buffer(token_t *in, token_t *gold,
   free(phiR);
   free(phiI);
   // if get golden output from sw_comp
-  free(gold_fp);
+
 }
 
 /* User-defined code */
@@ -246,7 +272,7 @@ static void init_parameters()
 	out_len =  out_words_adj * (1);
 	in_size = in_len * sizeof(token_t);
 	out_size = out_len * sizeof(token_t);
-	out_offset = in_len;
+	out_offset = in_len << 1;
 	size = (out_offset * sizeof(token_t)) + out_size;
 }
 
@@ -258,8 +284,8 @@ int main(int argc, char **argv)
 	token_t *gold;
 	token_t *buf;
 
-	const char* inputFile = "test_small.bin";
-	const char* goldFile  = "test_small.out";
+	const char* inputFile = argv[1];
+	const char* goldFile  = argv[2];
 
 	//	printf("\n before init parameters \n");
 	init_parameters();
@@ -270,7 +296,6 @@ int main(int argc, char **argv)
     
 	gold = malloc(out_size);
 
-	printf("\n before init buffers \n");
 	
 	printf("\n====== %s ======\n\n", cfg_000[0].devname);
 	/* <<--print-params-->> */
