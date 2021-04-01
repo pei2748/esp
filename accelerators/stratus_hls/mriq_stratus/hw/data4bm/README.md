@@ -13,7 +13,7 @@ How to generate testing data for bare metal app and linux app
         2. "test_32_x64_k64.out"
         
     * These two files needed when testing linux app.
-    * They are also feeded into wrt_bmData to generate input file for
+    * They are also fed into wrt_bmData to generate input file for
         baremetal app testing.
 3. run wrt_bmData with 6 arguments (6 parameters to the accelerator)
    * The 6 argments are in the following order:
