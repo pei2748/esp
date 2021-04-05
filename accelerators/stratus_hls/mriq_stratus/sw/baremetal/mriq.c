@@ -29,12 +29,12 @@ static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 #define DEV_NAME "sld,mriq_stratus"
 
 /* <<--params-->> */
-const int32_t numX = 64;
-const int32_t numK = 64;
-const int32_t num_batch_k = 4;
+const int32_t numX = 4;
+const int32_t numK = 16;
+const int32_t num_batch_k = 1;
 const int32_t batch_size_k = 16;
-const int32_t num_batch_x = 4;
-const int32_t batch_size_x = 16;
+const int32_t num_batch_x = 1;
+const int32_t batch_size_x = 4;
 
 static unsigned in_words_adj;
 static unsigned out_words_adj;
@@ -94,7 +94,7 @@ static int validate_buf(token_t *out, token_t *gold)
 
 static void init_buf (token_t *in, token_t * gold)
 {
-#include "../../hw/data4bm/test_32_x64_k64_bm.h"
+#include "../../hw/data4bm/test_32_x4_k16_bm.h"
 }
 
 
@@ -125,8 +125,8 @@ int main(int argc, char * argv[])
 	out_size = out_len * sizeof(token_t);
 
 	// previously is in_len
-       	out_offset  = in_len << 1; 
-	//	out_offset  = in_len; 
+	//       	out_offset  = in_len << 1; 
+	out_offset  = in_len; 
 
 	mem_size = (out_offset * sizeof(token_t)) + out_size;
 
@@ -229,6 +229,7 @@ int main(int argc, char * argv[])
 
 			/* Validation */
 			errors = validate_buf(&mem[out_offset], gold);
+
 			if (errors)
 				printf("  ... FAIL\n");
 			else

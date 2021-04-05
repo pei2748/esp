@@ -272,7 +272,7 @@ static void init_parameters()
 	out_len =  out_words_adj * (1);
 	in_size = in_len * sizeof(token_t);
 	out_size = out_len * sizeof(token_t);
-	out_offset = in_len << 1;
+	out_offset = in_len;
 	size = (out_offset * sizeof(token_t)) + out_size;
 }
 

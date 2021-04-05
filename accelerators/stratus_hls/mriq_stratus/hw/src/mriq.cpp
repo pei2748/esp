@@ -200,10 +200,12 @@ void mriq::store_output()
 #else
         uint32_t store_offset = round_up(3*numX+5*numK, DMA_WORD_PER_BEAT) * 1;
 #endif
+
         uint32_t offset = store_offset;
 
+	uint32_t dma_addr = offset/DMA_WORD_PER_BEAT;
 
-	uint32_t dma_addr = offset;
+
 	bool pingpong_x = true;
 
 
