@@ -59,8 +59,7 @@ void load(word_t _inbuff_x[BATCH_SIZE_X],
           /* <<--compute-params-->> */
 	  dma_length_load_t dma_length_load,
 	  dma_info_t &load_ctrl, 
-	  int chunk, int batch,
-	  bool &load_k)
+	  int chunk, int batch)
 {
     // configure dma index for load process
 
@@ -140,38 +139,23 @@ void store(word_t _outbuff_Qr[BATCH_SIZE_X], word_t _outbuff_Qi[BATCH_SIZE_X],
     // configure dma index for store process
     dma_index_store_t dma_index_store;
 
-//    unsigned dma_length;
-//    dma_length = dma_length_store.Qr + dma_length_store.Qi;
+    unsigned dma_length;
+    dma_length = dma_length_store.Qr + dma_length_store.Qi;
 
-    dma_index_store.Qr = store_offset + chunk * (dma_length_store.Qr + dma_length_store.Qi);
+    dma_index_store.Qr = store_offset + chunk * dma_length;
     dma_index_store.Qi = dma_index_store.Qr + dma_length_store.Qr;
 
 
  store_data:
     // configure store_ctrl
     store_ctrl.index = dma_index_store.Qr;
-    store_ctrl.length = dma_length_store.Qr;
+    store_ctrl.length = dma_length;
     store_ctrl.size = SIZE_WORD_T;
 
     dma_write(_outbuff_Qr, dma_index_store.Qr, dma_length_store.Qr, out);
-    ap_wait();
-
-    store_ctrl.index = dma_index_store.Qi;
-    store_ctrl.length = dma_length_store.Qi;
-    store_ctrl.size = SIZE_WORD_T;
-    ap_wait();
 
     dma_write(_outbuff_Qi, dma_index_store.Qi, dma_length_store.Qi, out);
 
-//    ap_wait();
-//
-//    store_ctrl.index = dma_index_store.Qi;
-//    store_ctrl.length = dma_length_store.Qi;
-//    store_ctrl.size = SIZE_WORD_T;
-//
-//    ap_wait();
-//    dma_write(_outbuff_Qi, dma_index_store.Qi, dma_length_store.Qi, out);
-//
 }
 
 
@@ -304,7 +288,6 @@ void top(dma_word_t *out, dma_word_t *in1,
   for (unsigned b = 0; b < 1; b++)
     {
       // Chunking
-      bool load_k = true;
 
       word_t _inbuff_kx[NUMK];
       word_t _inbuff_ky[NUMK];
@@ -335,7 +318,7 @@ void top(dma_word_t *out, dma_word_t *in1,
 	       in1,
 	       /* <<--args-->> */
 	       dma_length_load,
-	       load_ctrl, c, b, load_k);
+	       load_ctrl, c, b);
 
 	  compute(_inbuff_x,_inbuff_y,_inbuff_z,
 		  _inbuff_kx,_inbuff_ky, _inbuff_kz, _inbuff_phiR, _inbuff_phiI, 
