@@ -67,24 +67,24 @@ void load(word_t _inbuff_x[BATCH_SIZE_X],
     unsigned dma_length;
     unsigned dma_index;
 
-
-    if (load_k == true) {
-      dma_length = dma_length_load.k * 5 + dma_length_load.x * 3;
+    if (chunk == 0) {
       dma_index = 0;
-
+      dma_length = dma_length_load.k * 5 + dma_length_load.x * 3;
+    } else if (chunk == 1) {
+      dma_index = 0;
+      dma_length = dma_length_load.k * 5 + dma_length_load.x * 6;
     } else {
+      dma_index = dma_length_load.k * 5 + 3 * dma_length_load.x * chunk;
       dma_length = dma_length_load.x * 3;
-      dma_index = dma_length_load.k * 5 + dma_length_load.x * 3 * chunk;
-
     }
-
-
 
     load_ctrl.index = dma_index;
     load_ctrl.length = dma_length;
     load_ctrl.size = SIZE_WORD_T;
 
-    if (load_k == true) {
+    // only to 5 k-variables only in the 1st and 2nd iteration
+
+    if (chunk == 0 || chunk == 1) {
 
 	dma_read(_inbuff_kx, dma_index, dma_length_load.k, in1);
 	dma_index += dma_length_load.k;
@@ -100,10 +100,9 @@ void load(word_t _inbuff_x[BATCH_SIZE_X],
 
 	dma_read(_inbuff_phiI, dma_index, dma_length_load.k, in1);
 	dma_index += dma_length_load.k;
-
-      	load_k = false;
     }
 
+    // load into inbuff_x, inbuff_y, inbuff_z for every chunk
 
     dma_read(_inbuff_x, dma_index, dma_length_load.x, in1);
     dma_index += dma_length_load.x;
@@ -113,7 +112,19 @@ void load(word_t _inbuff_x[BATCH_SIZE_X],
 
     dma_read(_inbuff_z, dma_index, dma_length_load.x, in1);
 
+    if (chunk == 1) {
+      // overwrite inbuff_x, y, z with new data
+      dma_index += dma_length_load.x;
 
+      dma_read(_inbuff_x, dma_index, dma_length_load.x, in1);
+      dma_index += dma_length_load.x;
+
+      dma_read(_inbuff_y, dma_index, dma_length_load.x, in1);
+      dma_index += dma_length_load.x;
+
+      dma_read(_inbuff_z, dma_index, dma_length_load.x, in1);
+
+    }
 }
 
 
@@ -128,20 +139,28 @@ void store(word_t _outbuff_Qr[BATCH_SIZE_X], word_t _outbuff_Qi[BATCH_SIZE_X],
 
     // configure dma index for store process
     dma_index_store_t dma_index_store;
-    unsigned dma_length;
-    dma_length = dma_length_store.Qr + dma_length_store.Qi;
-    dma_index_store.Qr = store_offset + chunk * dma_length;
+
+//    unsigned dma_length;
+//    dma_length = dma_length_store.Qr + dma_length_store.Qi;
+
+    dma_index_store.Qr = store_offset + chunk * (dma_length_store.Qr + dma_length_store.Qi);
     dma_index_store.Qi = dma_index_store.Qr + dma_length_store.Qr;
 
 
  store_data:
     // configure store_ctrl
     store_ctrl.index = dma_index_store.Qr;
-    store_ctrl.length = dma_length;
+    store_ctrl.length = dma_length_store.Qr;
     store_ctrl.size = SIZE_WORD_T;
 
     dma_write(_outbuff_Qr, dma_index_store.Qr, dma_length_store.Qr, out);
     ap_wait();
+
+    store_ctrl.index = dma_index_store.Qi;
+    store_ctrl.length = dma_length_store.Qi;
+    store_ctrl.size = SIZE_WORD_T;
+    ap_wait();
+
     dma_write(_outbuff_Qi, dma_index_store.Qi, dma_length_store.Qi, out);
 
 //    ap_wait();

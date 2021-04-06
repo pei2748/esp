@@ -77,8 +77,7 @@ static int validate_buf(token_t *out, token_t *gold)
            printf("gold is 0\n");
 	   diff = fabs((gval - val)/val);
     } else {
-	   printf("gold is non-zero \n");
-	   print_uart_int(val); print_uart("\n");
+	   printf("i = %d, out = %ld, gold = %ld\n", i, out[i], gold[i]);
 	   diff = fabs((gval - val)/gval);
 
     }
@@ -93,7 +92,10 @@ static int validate_buf(token_t *out, token_t *gold)
 
 static void init_buf (token_t *in, token_t * gold)
 {
-#include "../../hw/tb/test_barec.h"
+  //#include "../../hw/tb/test_barec.h"
+
+#include "test_32_x8_k16_bm.h"
+
 }
 
 int main(int argc, char * argv[])
