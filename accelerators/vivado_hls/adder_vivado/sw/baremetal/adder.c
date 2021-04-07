@@ -40,7 +40,7 @@ typedef int32_t word_t;
 #define DEV_NAME "sld,adder_vivado"
 
 // Sizes
-#define NINVOKE 4
+#define NINVOKE 1
 #define NBURSTS 4
 #define IN_SIZE_DATA (SIZE_IN_CHUNK_DATA * NBURSTS)
 #define OUT_SIZE_DATA (SIZE_OUT_CHUNK_DATA * NBURSTS)
