@@ -19,8 +19,6 @@ public:
     conf_info_t()
     {
         /* <<--ctor-->> */
-        this->numX = 4;
-        this->numK = 16;
         this->num_batch_k = 1;
         this->batch_size_k = 16;
         this->num_batch_x = 1;
@@ -29,8 +27,7 @@ public:
 
     conf_info_t(
         /* <<--ctor-args-->> */
-        int32_t numX, 
-        int32_t numK, 
+
         int32_t num_batch_k, 
         int32_t batch_size_k, 
         int32_t num_batch_x, 
@@ -38,8 +35,6 @@ public:
         )
     {
         /* <<--ctor-custom-->> */
-        this->numX = numX;
-        this->numK = numK;
         this->num_batch_k = num_batch_k;
         this->batch_size_k = batch_size_k;
         this->num_batch_x = num_batch_x;
@@ -50,8 +45,6 @@ public:
     inline bool operator==(const conf_info_t &rhs) const
     {
         /* <<--eq-->> */
-        if (numX != rhs.numX) return false;
-        if (numK != rhs.numK) return false;
         if (num_batch_k != rhs.num_batch_k) return false;
         if (batch_size_k != rhs.batch_size_k) return false;
         if (num_batch_x != rhs.num_batch_x) return false;
@@ -63,8 +56,6 @@ public:
     inline conf_info_t& operator=(const conf_info_t& other)
     {
         /* <<--assign-->> */
-        numX = other.numX;
-        numK = other.numK;
         num_batch_k = other.num_batch_k;
         batch_size_k = other.batch_size_k;
         num_batch_x = other.num_batch_x;
@@ -81,8 +72,6 @@ public:
     {
         os << "{";
         /* <<--print-->> */
-        os << "numX = " << conf_info.numX << ", ";
-        os << "numK = " << conf_info.numK << ", ";
         os << "num_batch_k = " << conf_info.num_batch_k << ", ";
         os << "batch_size_k = " << conf_info.batch_size_k << ", ";
         os << "num_batch_x = " << conf_info.num_batch_x << ", ";
@@ -92,8 +81,6 @@ public:
     }
 
         /* <<--params-->> */
-        int32_t numX;
-        int32_t numK;
         int32_t num_batch_k;
         int32_t batch_size_k;
         int32_t num_batch_x;

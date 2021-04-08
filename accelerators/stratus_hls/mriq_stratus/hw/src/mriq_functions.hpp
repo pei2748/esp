@@ -126,6 +126,9 @@ void mriq::ComputeQ(FPDATA_S x,FPDATA_S y,FPDATA_S z, uint16_t  batch_size_k, bo
     {
       //  ESP_REPORT_INFO("compute function: SK-for loop");
       HLS_PIPELINE_LOOP(HARD_STALL, 1, "inner-k-loop-A0");
+
+      // read data from PLMs to registers
+
       for(i = 0; i < unroll_factor; i++){
 	HLS_UNROLL_SIMPLE;
 	HLS_BREAK_DEP(plm_kx);
@@ -139,6 +142,11 @@ void mriq::ComputeQ(FPDATA_S x,FPDATA_S y,FPDATA_S z, uint16_t  batch_size_k, bo
 	kz[i] = int2fp<FPDATA_S, FPDATA_S_WL>(plm_kz[indexK + i]);   
 	phiR[i] = int2fp<FPDATA_S, FPDATA_S_WL>(plm_phiR[indexK + i]);   
 	phiI[i] = int2fp<FPDATA_S, FPDATA_S_WL>(plm_phiI[indexK + i]);   
+      }
+
+      // do computation
+      for(i = 0; i < unroll_factor; i++){
+	HLS_UNROLL_SIMPLE;
 
 	phiMag[i] = phiR[i] * phiR[i] + phiI[i] * phiI[i];
 	expArg[i] = PI2 * (kx[i] * x + ky[i] * y + kz[i] * z);
@@ -148,6 +156,17 @@ void mriq::ComputeQ(FPDATA_S x,FPDATA_S y,FPDATA_S z, uint16_t  batch_size_k, bo
 	Qiacc_p[i] = phiMag[i] * sinArg[i];
       }
 
+      // do accumulation
+
+      for(i = 0; i < unroll_factor; i++){
+	HLS_UNROLL_SIMPLE;
+
+	Qracc += Qracc_p[i];
+	Qiacc += Qiacc_p[i];
+      }
+      
+
+#if(0)
 #if(PARAL==4)
       Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3];
       Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3];
@@ -159,11 +178,10 @@ void mriq::ComputeQ(FPDATA_S x,FPDATA_S y,FPDATA_S z, uint16_t  batch_size_k, bo
       Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3] + Qiacc_p[4] + Qiacc_p[5] + Qiacc_p[6] + Qiacc_p[7] + Qiacc_p[8] + Qiacc_p[9] + Qiacc_p[10] + Qiacc_p[11] + Qiacc_p[12] + Qiacc_p[13] + Qiacc_p[14] + Qiacc_p[15];
 
 #endif
+
+#endif
+
     } // end for numK
-  //  float m;
-  //  m = (float) Qracc;
-  //  ESP_REPORT_INFO("Qracc = %f", m);
-  //
 
 
 #else

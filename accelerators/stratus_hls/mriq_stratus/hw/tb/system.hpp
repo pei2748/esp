@@ -54,8 +54,6 @@ public:
         acc->debug(debug);
 
         /* <<--params-default-->> */
-        numX = 4;
-        numK = 16;
         num_batch_k = 1;
         batch_size_k = 16;
         num_batch_x = 1;
@@ -78,36 +76,27 @@ public:
 
     // Accelerator-specific data
     /* <<--params-->> */
-    int32_t numX;
-    int32_t numK;
     int32_t num_batch_k;
     int32_t batch_size_k;
     int32_t num_batch_x;
     int32_t batch_size_x;
 
-    uint32_t in_words_adj;
-    uint32_t out_half_words_adj;
-    uint32_t in_size;
-    uint32_t out_half_size;
+    unsigned in_words_adj;
+    unsigned out_words_adj;
+    unsigned in_size;
+    unsigned out_size;
+    unsigned in_len;
+    unsigned out_len;
+    unsigned out_offset;
+    unsigned mem_size;
 
-
-    float *gold_Qr, *gold_Qi;
-    float *out_Qr, *out_Qi;
-    ofstream outfile; // store the fx data for baremetal test
-
-
-  // Path for input:
-  //  std::string inputData_path;
-  
-  // Path for golden output
-  //std::string outputData_path;
-
-  // Path for integer type data used for barec
-  //std::string outint_path;
+    float *gold;
+    float *out;
+    float *in;
 
   // Other Functions
 
-  void load_one_var(float *in, int offset, int32_t base_index, int32_t size);
+  void load_mem(float *in, int offset, int32_t base_index, int32_t size);
 
 };
 

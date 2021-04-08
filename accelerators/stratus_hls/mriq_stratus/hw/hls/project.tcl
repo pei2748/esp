@@ -71,7 +71,7 @@ define_system_module tb ../tb/system.cpp ../tb/sc_main.cpp
 # Testbench configuration
 set INPUT_PATH "../input"
 set OUTPUT_PATH "../output"
-set DATA_4_TEST "../data4bm"
+
 # TESTBENCHES can be set as the following: 
 # "32_32_32_dataset",  "64_64_64_dataset",  "128_128_128_dataset", "test_small"
 
@@ -88,14 +88,13 @@ set DEFAULT_ARGV ""
 
 foreach dma [list 64] {
     foreach arch [list 0] {
-	foreach para [list 4 8 16] {
+	foreach para [list 4] {
 	        define_io_config * IOCFG_P$para\_A$arch\_DMA$dma -DPARAL=$para -DARCH=$arch -DDMA_WIDTH=$dma 
 	        define_system_config tb TESTBENCH_P$para\_A$arch\_DMA$dma -DARCH=$arch -io_config IOCFG_P$para\_A$arch\_DMA$dma
 	    foreach tb $TESTBENCHES {
 		set ARGV ""
 		append ARGV "$INPUT_PATH/$tb.bin ";
 		append ARGV "$OUTPUT_PATH/$tb.out ";
-		append ARGV "$DATA_4_TEST/$tb\_4bm.h ";
 		define_sim_config "BEHAV_P$para\_A$arch\_DMA$dma" "mriq BEH" "tb TESTBENCH_P$para\_A$arch\_DMA$dma" -io_config IOCFG_P$para\_A$arch\_DMA$dma -argv $ARGV
 	    }
 	    foreach cfg [list BASIC] {
@@ -104,7 +103,6 @@ foreach dma [list 64] {
 		set ARGV ""
 		append ARGV "$INPUT_PATH/$tb.bin ";
 		append ARGV "$OUTPUT_PATH/$tb.out ";
-		append ARGV "$DATA_4_TEST/$tb\_4bm.h ";
 		if {$TECH_IS_XILINX == 1} {
 		        define_sim_config "$cname\_V" "mriq RTL_V $cname" "tb TESTBENCH_P$para\_A$arch\_DMA$dma" -io_config IOCFG_P$para\_A$arch\_DMA$dma -argv $ARGV -verilog_top_modules glbl
 		} else {

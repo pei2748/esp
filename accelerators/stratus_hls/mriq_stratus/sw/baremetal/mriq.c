@@ -10,27 +10,26 @@
 #include <esp_probe.h>
 #include <fixed_point.h>
 
-#include <math.h> // for fabs function
+#include "../../common/utils.h"
 
 typedef int32_t token_t;
-#define fx2float fixed32_to_float
-#define float2fx float_to_fixed32
-#define FX_IL 12
-
-
 
 static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 {
-        return (sizeof(void *) / _st);
+  return (sizeof(void *) / _st);
 }
+
+
+#define fx2float fixed32_to_float
+#define float2fx float_to_fixed32
+#define FX_IL 12
 
 
 #define SLD_MRIQ 0x079
 #define DEV_NAME "sld,mriq_stratus"
 
 /* <<--params-->> */
-const int32_t numX = 4;
-const int32_t numK = 16;
+
 const int32_t num_batch_k = 1;
 const int32_t batch_size_k = 16;
 const int32_t num_batch_x = 1;
@@ -38,12 +37,13 @@ const int32_t batch_size_x = 4;
 
 static unsigned in_words_adj;
 static unsigned out_words_adj;
-static unsigned in_len;
-static unsigned out_len;
 static unsigned in_size;
 static unsigned out_size;
+static unsigned in_len;
+static unsigned out_len;
 static unsigned out_offset;
 static unsigned mem_size;
+
 
 /* Size of the contiguous chunks for scatter/gather */
 #define CHUNK_SHIFT 20
@@ -54,45 +54,32 @@ static unsigned mem_size;
 
 /* User defined registers */
 /* <<--regs-->> */
-#define MRIQ_NUMX_REG 0x54
-#define MRIQ_NUMK_REG 0x50
+
 #define MRIQ_NUM_BATCH_K_REG 0x4c
 #define MRIQ_BATCH_SIZE_K_REG 0x48
 #define MRIQ_NUM_BATCH_X_REG 0x44
 #define MRIQ_BATCH_SIZE_X_REG 0x40
 
-//#if(0)
-static int validate_buf(token_t *out, token_t *gold)
+
+static int validate_buf(token_t *out, float *gold)
 {
-  int i;
+    float *out_fp;
+    int ret;
+    out_fp = aligned_malloc(out_len * sizeof(float));
 
-  unsigned errors = 0;
-  float diff;
-  float error_th = 0.01;
-
-  for (i = 0; i < 2*numX; i++){
-    float val = fx2float(out[i], FX_IL);
-    float goldfp = fx2float(gold[i], FX_IL);
-
-    if(!val && !goldfp)
-      diff = 0;
-    else if(!goldfp)
-      diff = fabs((goldfp - val)/val);
-    else {
-      diff = fabs((goldfp - val)/goldfp);
-      printf("i = %d, out = %ld, gold = %ld\n", i, out[i], gold[i]);
-
+    for (int i = 0; i < out_len; i++) {
+      out_fp[i] = fx2float(out[i], FX_IL);
     }
-    if (diff > error_th)
-      errors++;
-  }
 
-  return errors;
+    ret = validate_buffer(out_fp, gold, out_len);
+
+    aligned_free(out_fp);
+    return ret;
 }
 
 
 
-static void init_buf (token_t *in, token_t * gold)
+static void init_buf (token_t *in, float * gold)
 {
 #include "../../hw/data4bm/test_32_x4_k16_bm.h"
 }
@@ -108,28 +95,19 @@ int main(int argc, char * argv[])
 	unsigned done;
 	unsigned **ptable;
 	token_t *mem;
-	token_t *gold;
+	float *gold;
 	unsigned errors = 0;
 	unsigned coherence;
 
-	if (DMA_WORD_PER_BEAT(sizeof(token_t)) == 0) {
-		in_words_adj = 3*numX+5*numK;
-		out_words_adj = 2*numX;
-	} else {
-		in_words_adj = round_up(3*numX+5*numK, DMA_WORD_PER_BEAT(sizeof(token_t)));
-		out_words_adj = round_up(2*numX, DMA_WORD_PER_BEAT(sizeof(token_t)));
-	}
-	in_len = in_words_adj * (1);
-	out_len = out_words_adj * (1);
-	in_size = in_len * sizeof(token_t);
-	out_size = out_len * sizeof(token_t);
-
-	// previously is in_len
-	//       	out_offset  = in_len << 1; 
-	out_offset  = in_len; 
-
-	mem_size = (out_offset * sizeof(token_t)) + out_size;
-
+	// init corresponding parameters
+	init_parameters(batch_size_x, num_batch_x, 
+			batch_size_k, num_batch_k,
+			&in_words_adj, &out_words_adj,
+			&in_len, &out_len,
+			&in_size, &out_size,
+			&out_offset,
+			&mem_size,
+			DMA_WORD_PER_BEAT(sizeof(token_t)));
 
 
 	// Search for the device
@@ -159,8 +137,10 @@ int main(int argc, char * argv[])
 		}
 
 		// Allocate memory
-		gold = aligned_malloc(out_size);
+		gold = aligned_malloc(out_len * sizeof(float));
+
 		mem = aligned_malloc(mem_size);
+
 		printf("  memory buffer base-address = %p\n", mem);
 
 		// Alocate and populate page table
@@ -202,8 +182,7 @@ int main(int argc, char * argv[])
 
 			// Pass accelerator-specific configuration parameters
 			/* <<--regs-config-->> */
-		iowrite32(dev, MRIQ_NUMX_REG, numX);
-		iowrite32(dev, MRIQ_NUMK_REG, numK);
+
 		iowrite32(dev, MRIQ_NUM_BATCH_K_REG, num_batch_k);
 		iowrite32(dev, MRIQ_BATCH_SIZE_K_REG, batch_size_k);
 		iowrite32(dev, MRIQ_NUM_BATCH_X_REG, num_batch_x);

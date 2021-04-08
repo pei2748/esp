@@ -5,7 +5,5 @@
     <param name="num_batch_x" desc="num_batch_x" />
     <param name="batch_size_k" desc="batch_size_k" />
     <param name="num_batch_k" desc="num_batch_k" />
-    <param name="numK" desc="numK" />
-    <param name="numX" desc="numX" />
   </accelerator>
 </sld>

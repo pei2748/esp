@@ -28,8 +28,8 @@ void mriq::load_input()
 
     // Config
     /* <<--params-->> */
-    int32_t numX;
-    int32_t numK;
+
+
     int32_t num_batch_k;
     int32_t batch_size_k;
     int32_t num_batch_x;
@@ -42,8 +42,8 @@ void mriq::load_input()
 
         // User-defined config code
         /* <<--local-params-->> */
-        numX = config.numX;
-        numK = config.numK;
+
+
         num_batch_k = config.num_batch_k;
         batch_size_k = config.batch_size_k;
         num_batch_x = config.num_batch_x;
@@ -59,10 +59,6 @@ void mriq::load_input()
         int32_t dma_addr = 0;
 
 	// in case for small test data.
-	if(numX < batch_size_x)
-	    batch_size_x = numX;
-	if(numK < batch_size_k)
-	    batch_size_k = numK;
 
 
 
@@ -91,15 +87,14 @@ void mriq::load_input()
 #else
 
         bool pingpong_k = true;
-        int32_t total_loading =  num_batch_k * numX;    // each x-space data point needs num_batch_k loading
-        int32_t dma_addr_x = ( 5 * numK )/DMA_WORD_PER_BEAT; // address offset of the first x-space data
+        int32_t total_loading =  num_batch_k * batch_size_x * num_batch_x;    // each x-space data point needs num_batch_k loading
+        int32_t dma_addr_x = ( 5 * batch_size_k * num_batch_k ) >> (DMA_WORD_PER_BEAT - 1); // address offset of the first x-space data
         int counter_k = num_batch_k;    // counter_k indicates when to reverse pingpong_k
         int counter_x_ini = num_batch_k * batch_size_x; // after every counter_x_init number of loadings, reverse pingpong_x
         int counter_x = counter_x_ini; //counter_x indicates when to reverse pingpong_x
 
 	// if numK < batch_size_k, there is no need to use Arch 1.
-	if(numX < batch_size_x)
-	    batch_size_x = numX;
+
 	
         for(int l=0; l < total_loading; l++) {  
 	  // in if statement, counter_x == XXX, this number is the initialized value.
@@ -125,12 +120,12 @@ void mriq::load_input()
                 load_one_data(plm_phiI_ping,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
                 counter_x -= 1;  counter_k -= 1;
 	    } else {
-	      load_one_data(plm_kx_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	      load_one_data(plm_ky_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	      load_one_data(plm_kz_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	      load_one_data(plm_phiR_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	      load_one_data(plm_phiI_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	      counter_x -= 1;  counter_k -= 1;
+	        load_one_data(plm_kx_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		load_one_data(plm_ky_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		load_one_data(plm_kz_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		load_one_data(plm_phiR_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		load_one_data(plm_phiI_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		counter_x -= 1;  counter_k -= 1;
 	    }
             
 	    if(counter_k == 0) { // loading finished for one x-space data point
@@ -167,8 +162,7 @@ void mriq::store_output()
 
     // Config
     /* <<--params-->> */
-    int32_t numX;
-    int32_t numK;
+
     int32_t num_batch_k;
     int32_t batch_size_k;
     int32_t num_batch_x;
@@ -181,8 +175,7 @@ void mriq::store_output()
 
         // User-defined config code
         /* <<--local-params-->> */
-        numX = config.numX;
-        numK = config.numK;
+
         num_batch_k = config.num_batch_k;
         batch_size_k = config.batch_size_k;
         num_batch_x = config.num_batch_x;
@@ -194,23 +187,17 @@ void mriq::store_output()
         HLS_PROTO("store-dma");
         wait();
 
+        uint32_t store_offset = round_up(3 * batch_size_x * num_batch_x + 5 * batch_size_k * num_batch_k, DMA_WORD_PER_BEAT);
+	wait();
 
-#if (DMA_WORD_PER_BEAT == 0)
-        uint32_t store_offset = (3*numX+5*numK) * 1;
-#else
-        uint32_t store_offset = round_up(3*numX+5*numK, DMA_WORD_PER_BEAT) * 1;
-#endif
 
-        uint32_t offset = store_offset;
 
-	uint32_t dma_addr = offset/DMA_WORD_PER_BEAT;
+	uint32_t dma_addr = store_offset/DMA_WORD_PER_BEAT;
 
 
 	bool pingpong_x = true;
 
 
-	if(numX < batch_size_x)
-	    batch_size_x = numX;
 
 	for(int i = 0; i < num_batch_x; i++) {
 	    this->store_compute_handshake();
@@ -255,8 +242,7 @@ void mriq::compute_kernel()
 
     // Config
     /* <<--params-->> */
-    int32_t numX;
-    int32_t numK;
+
     int32_t num_batch_k;
     int32_t batch_size_k;
     int32_t num_batch_x;
@@ -269,8 +255,7 @@ void mriq::compute_kernel()
 
         // User-defined config code
         /* <<--local-params-->> */
-        numX = config.numX;
-        numK = config.numK;
+
         num_batch_k = config.num_batch_k;
         batch_size_k = config.batch_size_k;
         num_batch_x = config.num_batch_x;
@@ -312,11 +297,6 @@ void mriq::compute_kernel()
 
     bool pingpong_x = true;
     bool pingpong_k = true;
-
-    if(numX < batch_size_x)
-      batch_size_x = numX;
-    if(numK < batch_size_k)
-      batch_size_k = numK;
    
 
 

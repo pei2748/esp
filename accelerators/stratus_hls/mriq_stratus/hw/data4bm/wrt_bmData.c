@@ -1,33 +1,45 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "../../common/helper.h"
+#include <math.h>
+
+
+
 /* argument list: 
- * Please specify 6 arguments in the following order:	\
- * 1. numX						\
- * 2. numK						\
- * 3. batch_size_k					\
- * 4. num_batch_k					\
- * 5. batch_size_x					\
+ * Please specify 6 arguments in the following order:\
+ * 1. numX\
+ * 2. numK\
+ * 3. batch_size_k\
+ * 4. num_batch_k\
+ * 5. batch_size_x\
  * 6. num_batch_x
  * e.g. $./wrt_bmData 64 64 16 4 16 4
  */
 
 
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "../tb/helper.h"
-#include <math.h>
-
-void write_buff(FILE *fp, unsigned len, float *val, unsigned batch, unsigned base_in, const char* buff) {
+void write_in(FILE *fp, unsigned len, float *val, unsigned batch, unsigned base_in) {
   unsigned base = batch * len;
 
   // len is the batch_size_x or batch_size_k;
   
   for (int i = 0; i < len; i++)
     
-    fprintf(fp, "%s[%d] = float2fx((float) %f, FX_IL);\n", 
-	    buff, base_in + i, val[base+i]);
+    fprintf(fp, "in[%d] = float2fx((float) %f, FX_IL);\n", base_in + i, val[base+i]);
   
 }
+
+void write_gold(FILE *fp, unsigned len, float *val, unsigned batch, unsigned base_in) {
+  unsigned base = batch * len;
+
+  // len is the batch_size_x or batch_size_k;
+  
+  for (int i = 0; i < len; i++)
+    
+    fprintf(fp, "gold[%d] = %f;\n", base_in + i, val[base+i]);
+  
+}
+
 
 int main(int argc, char **argv) {
   if(argc<=1) {
@@ -93,49 +105,47 @@ int main(int argc, char **argv) {
   bmp = fopen(bm_name, "w");
   int base_in;
 
-  const char *in = "in";
-  const char *gold = "gold";
-    // write input to file
-    for (int b = 0; b < num_batch_k; b++) {
+  // write input to file
+  for (int b = 0; b < num_batch_k; b++) {
 
-         base_in = 5 * b * batch_size_k;
-         write_buff(bmp, batch_size_k, kx, b, base_in, in);
+    base_in = 5 * b * batch_size_k;
+    write_in(bmp, batch_size_k, kx, b, base_in);
 
-	 base_in += batch_size_k;
-         write_buff(bmp, batch_size_k, ky, b, base_in, in);
+    base_in += batch_size_k;
+    write_in(bmp, batch_size_k, ky, b, base_in);
 
-	 base_in += batch_size_k;
-         write_buff(bmp, batch_size_k, kz, b, base_in, in);
+    base_in += batch_size_k;
+    write_in(bmp, batch_size_k, kz, b, base_in);
 
 
-	 base_in += batch_size_k;
-         write_buff(bmp, batch_size_k, phiR, b, base_in, in);
+    base_in += batch_size_k;
+    write_in(bmp, batch_size_k, phiR, b, base_in);
 
 
-	 base_in += batch_size_k;
-         write_buff(bmp, batch_size_k, phiI, b, base_in, in);
-    }
+    base_in += batch_size_k;
+    write_in(bmp, batch_size_k, phiI, b, base_in);
+  }
 
 
-    for (int b = 0; b < num_batch_x; b++) {
-         base_in = 5 * numK + 3 * b * batch_size_x;
-         write_buff(bmp, batch_size_x, x, b, base_in, in);
+  for (int b = 0; b < num_batch_x; b++) {
+    base_in = 5 * numK + 3 * b * batch_size_x;
+    write_in(bmp, batch_size_x, x, b, base_in);
 
-	 base_in += batch_size_x;
-         write_buff(bmp, batch_size_x, y, b, base_in, in);
+    base_in += batch_size_x;
+    write_in(bmp, batch_size_x, y, b, base_in);
 
-	 base_in += batch_size_x;
-         write_buff(bmp, batch_size_x, z, b, base_in, in);
-    }
+    base_in += batch_size_x;
+    write_in(bmp, batch_size_x, z, b, base_in);
+  }
 
-    // write golden output to file
-    for (int b = 0; b < num_batch_x; b++) {
-         base_in = 2 * b * batch_size_x;
-         write_buff(bmp, batch_size_x, Qr, b, base_in, gold);
+  // write golden output to file
+  for (int b = 0; b < num_batch_x; b++) {
+    base_in = 2 * b * batch_size_x;
+    write_gold(bmp, batch_size_x, Qr, b, base_in);
 
-	 base_in += batch_size_x;
-         write_buff(bmp, batch_size_x, Qi, b, base_in, gold);
-    }
+    base_in += batch_size_x;
+    write_gold(bmp, batch_size_x, Qi, b, base_in);
+  }
 
   free(kx);
   free(ky);
