@@ -91,13 +91,13 @@ public:
     esp_config_proc cfg;
 
     // Functions
-    void load_one_data(FPDATA_S_WORD array[], uint32_t dma_addr, uint32_t len);
+    void load_data(FPDATA_S_WORD array[], uint32_t dma_addr, uint32_t len);
 
     void ComputeQ(FPDATA_S x,FPDATA_S y,FPDATA_S z, uint16_t  batch_size_k,
 		  bool pingpong_k, FPDATA_S *sin_table,
 		  FPDATA_L *Qr, FPDATA_L *Qi);
 
-    void store_one_data(FPDATA_L_WORD array[], uint32_t dma_addr, uint32_t len);
+    void store_data(FPDATA_L_WORD array[], uint32_t dma_addr, uint32_t len);
     FPDATA_S mySinf(FPDATA_L angle, FPDATA_S *sin_table);
 
 

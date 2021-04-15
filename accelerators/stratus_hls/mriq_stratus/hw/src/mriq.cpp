@@ -92,7 +92,7 @@ void mriq::load_input()
         const int32_t total_loading =  num_batch_k * batch_size_x * num_batch_x; 
 
 	// address offset of the first x-space data
-        const int32_t dma_addr_x = ( 5 * batch_size_k * num_batch_k ) >> (DMA_WORD_PER_BEAT - 1);
+        int32_t dma_addr_x = ( 5 * batch_size_k * num_batch_k ) >> (DMA_WORD_PER_BEAT - 1);
 
 	// after every counter_x_init number of loadings, reverse pingpong_x
         const int32_t counter_x_ini = num_batch_k * batch_size_x;
