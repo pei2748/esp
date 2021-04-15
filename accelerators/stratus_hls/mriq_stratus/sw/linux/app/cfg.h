@@ -16,18 +16,17 @@ typedef int32_t token_t;
 //#define NUM_BATCH_X 1
 //#define BATCH_SIZE_X 4
 
-#define NUMX 64
-#define NUMK 64
-#define NUM_BATCH_K 4
+
+#define NUM_BATCH_K 1
 #define BATCH_SIZE_K 16
-#define NUM_BATCH_X 4
-#define BATCH_SIZE_X 16
+#define NUM_BATCH_X 1
+#define BATCH_SIZE_X 4
 
 
 
 /* <<--params-->> */
-const int32_t numX = NUMX;
-const int32_t numK = NUMK;
+
+
 const int32_t num_batch_k = NUM_BATCH_K;
 const int32_t batch_size_k = BATCH_SIZE_K;
 const int32_t num_batch_x = NUM_BATCH_X;
@@ -38,8 +37,6 @@ const int32_t batch_size_x = BATCH_SIZE_X;
 struct mriq_stratus_access mriq_cfg_000[] = {
 	{
 		/* <<--descriptor-->> */
-		.numX = NUMX,
-		.numK = NUMK,
 		.num_batch_k = NUM_BATCH_K,
 		.batch_size_k = BATCH_SIZE_K,
 		.num_batch_x = NUM_BATCH_X,

@@ -64,22 +64,22 @@ void mriq::load_input()
 
 #if(ARCH == 0) // loading the whole k-space data into PLM
 	for(int n = 0; n < num_batch_k; n++) {
-	    load_one_data(plm_kx, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	    load_one_data(plm_ky, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	    load_one_data(plm_kz, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	    load_one_data(plm_phiR, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	    load_one_data(plm_phiI, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+	    load_data(plm_kx, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+	    load_data(plm_ky, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+	    load_data(plm_kz, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+	    load_data(plm_phiR, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+	    load_data(plm_phiI, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
 	} // finish loading 5 k-space variables.
        
 	for(int l=0; l < num_batch_x; l++) {
 	    if(pingpong_x) {
-                load_one_data(plm_x_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-                load_one_data(plm_y_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-                load_one_data(plm_z_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_x_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_y_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_z_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
 	    } else {
-                load_one_data(plm_x_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-                load_one_data(plm_y_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-                load_one_data(plm_z_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_x_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_y_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_z_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
 	    }
 	    this->load_compute_handshake();
 	    pingpong_x = !pingpong_x;
@@ -87,44 +87,59 @@ void mriq::load_input()
 #else
 
         bool pingpong_k = true;
-        int32_t total_loading =  num_batch_k * batch_size_x * num_batch_x;    // each x-space data point needs num_batch_k loading
-        int32_t dma_addr_x = ( 5 * batch_size_k * num_batch_k ) >> (DMA_WORD_PER_BEAT - 1); // address offset of the first x-space data
-        int counter_k = num_batch_k;    // counter_k indicates when to reverse pingpong_k
-        int counter_x_ini = num_batch_k * batch_size_x; // after every counter_x_init number of loadings, reverse pingpong_x
-        int counter_x = counter_x_ini; //counter_x indicates when to reverse pingpong_x
 
-	// if numK < batch_size_k, there is no need to use Arch 1.
+	// each x-space data point needs num_batch_k loading
+        const int32_t total_loading =  num_batch_k * batch_size_x * num_batch_x; 
+
+	// address offset of the first x-space data
+        const int32_t dma_addr_x = ( 5 * batch_size_k * num_batch_k ) >> (DMA_WORD_PER_BEAT - 1);
+
+	// after every counter_x_init number of loadings, reverse pingpong_x
+        const int32_t counter_x_ini = num_batch_k * batch_size_x;
+
+	//counter_x indicates when to reverse pingpong_x
+        int counter_x = counter_x_ini; 
+
+	// counter_k indicates when to load k from the beginning.
+        int counter_k = num_batch_k;    
+
 
 	
         for(int l=0; l < total_loading; l++) {  
 	  // in if statement, counter_x == XXX, this number is the initialized value.
+
             if(counter_x == counter_x_ini  && pingpong_x == true) {
-                load_one_data(plm_x_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
-                load_one_data(plm_y_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
-                load_one_data(plm_z_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+
+                load_data(plm_x_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_y_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_z_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
                 pingpong_x = !pingpong_x;
+
             } else if (counter_x == 0 && pingpong_x == false) {
-                load_one_data(plm_x_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
-                load_one_data(plm_y_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
-                load_one_data(plm_z_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+
+                load_data(plm_x_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_y_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+                load_data(plm_z_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+
                 counter_x = counter_x_ini << 1; // counter_x = initial value * 2;
+
                 pingpong_x = !pingpong_x;
 	    }
             
 	    if(pingpong_k) {
 		//HLS_PROTO("load ping");
-                load_one_data(plm_kx_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-                load_one_data(plm_ky_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-                load_one_data(plm_kz_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-                load_one_data(plm_phiR_ping,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-                load_one_data(plm_phiI_ping,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+                load_data(plm_kx_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+                load_data(plm_ky_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+                load_data(plm_kz_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+                load_data(plm_phiR_ping,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+                load_data(plm_phiI_ping,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
                 counter_x -= 1;  counter_k -= 1;
 	    } else {
-	        load_one_data(plm_kx_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-		load_one_data(plm_ky_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-		load_one_data(plm_kz_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-		load_one_data(plm_phiR_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-		load_one_data(plm_phiI_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+	        load_data(plm_kx_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		load_data(plm_ky_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		load_data(plm_kz_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		load_data(plm_phiR_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+		load_data(plm_phiI_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
 		counter_x -= 1;  counter_k -= 1;
 	    }
             
@@ -202,14 +217,14 @@ void mriq::store_output()
 	for(int i = 0; i < num_batch_x; i++) {
 	    this->store_compute_handshake();
 	    if(pingpong_x) {
-		store_one_data(plm_Qr_ping, dma_addr, batch_size_x);
+		store_data(plm_Qr_ping, dma_addr, batch_size_x);
 		dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-		store_one_data(plm_Qi_ping, dma_addr, batch_size_x);
+		store_data(plm_Qi_ping, dma_addr, batch_size_x);
 		dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
 	    } else {
-		store_one_data(plm_Qr_pong, dma_addr, batch_size_x);
+		store_data(plm_Qr_pong, dma_addr, batch_size_x);
 		dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-		store_one_data(plm_Qi_pong, dma_addr, batch_size_x);
+		store_data(plm_Qi_pong, dma_addr, batch_size_x);
 		dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
 	    }
 	    pingpong_x = !pingpong_x;
@@ -305,7 +320,9 @@ void mriq::compute_kernel()
     //ESP_REPORT_INFO("compute_kernel: come into if-SK part");
 
     for(int i = 0; i < num_batch_x; i++) {
+
 	this->compute_load_handshake();
+
 	for(int r = 0; r < batch_size_x; r++) {
 
 	    if(pingpong_x) {
@@ -319,18 +336,18 @@ void mriq::compute_kernel()
 	    }
 
 	    Qr=0; Qi=0;
+
 	    ComputeQ(x, y, z, batch_size_k,  pingpong_k, sin_table, &Qr, &Qi);
 	    
 	    if(pingpong_x) {
 		plm_Qr_ping[r] = fp2int<FPDATA_L, FPDATA_L_WL>(Qr);
 		plm_Qi_ping[r] = fp2int<FPDATA_L, FPDATA_L_WL>(Qi);   
-		//printf("Qr = %X; \n", plm_Qr_ping[r]);
-		//printf("Qi = %X; \n", plm_Qi_ping[r]);
 	    } else { 
 		plm_Qr_pong[r] = fp2int<FPDATA_L, FPDATA_L_WL>(Qr);
 		plm_Qi_pong[r] = fp2int<FPDATA_L, FPDATA_L_WL>(Qi);   
 	    }
 	} // end of batch_size_x
+
 	pingpong_x = !pingpong_x;
 	this->compute_store_handshake();
     } // end of num_batch_x for-loop
@@ -341,9 +358,13 @@ void mriq::compute_kernel()
     FPDATA_L Qi_p;
 
     for (int i=0; i < num_batch_x; i++) {
+
 	for(int r=0; r < batch_size_x; r++) {
+
 	    Qr = 0; Qi = 0;
+
 	    for(int j=0; j< num_batch_k; j++) {      
+
 		this->compute_load_handshake();  
 
 		if(pingpong_x) {

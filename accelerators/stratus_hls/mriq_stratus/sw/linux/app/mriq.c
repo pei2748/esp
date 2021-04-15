@@ -5,7 +5,6 @@
 #include "../../../common/utils.h"     // init_parameters() and validate_buffer()
 #include "../../../common/sw_exec.h"   // sw_exec()
 #include "../../../common/init_buff.h" // init_buffer()
-//#include <malloc.h>
 #include <fixed_point.h>
 
 #include <math.h> // for fabs function
@@ -31,11 +30,13 @@ static int validate_buf(token_t *out, float *gold)
 {
     float *out_fp;
     int ret;
+
     out_fp = malloc(out_len * sizeof(float));
 
     for (int i = 0; i < out_len; i++) {
       out_fp[i] = fx2float(out[i], FX_IL);
     }
+
     ret = validate_buffer(out_fp, gold, out_len);
 
     free(out_fp);
@@ -126,13 +127,30 @@ int main(int argc, char **argv)
 
 
 	if(run_sw) {
+	  
+	  float *out_sw = malloc(out_len * sizeof(float));
 
-	  sw_exec(gold, in_fp, 
+	  sw_exec(out_sw, in_fp, 
 		  batch_size_x, num_batch_x,
 		  batch_size_k, num_batch_k);
+
+	  int ret;
+
+	  ret = validate_buffer(out_sw, gold, out_len);
+
+	  if (ret)
+	    printf("+ SW Test FAILED!\n");
+	  else
+	    printf("+ SW Test PASSED!\n");
+
+	  free(out_sw);
+
 	}
 
+
+
 	free(gold);
+
 	free(in_fp);
 
 	esp_free(buf);
