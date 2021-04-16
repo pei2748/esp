@@ -15,11 +15,11 @@
 
 // In/out arrays
 
-//#define SIZE_IN_CHUNK_DATA 1311488
+#define BATCH_SIZE_X 2 
+#define NUMK 16
 
-// size_in_k_data is 5*numK, numK = 3072
-#define SIZE_IN_K_DATA 80
-#define SIZE_IN_CHUNK_DATA 384 // 128*3
-#define SIZE_OUT_CHUNK_DATA 256 // 128*2
+// parallelism level
+
+#define PRL 4
 
 #endif

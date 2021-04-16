@@ -7,15 +7,10 @@
 #define __gmp_const const
 
 #include "../inc/espacc_config.h"
-
-
 #include <cstdio>
-
 #include <ap_fixed.h>
 #include <ap_int.h>
-
-
-#include "ap_utils.h" /* ap_wait() */
+//#include "ap_utils.h" /* ap_wait() */
 
 
 //#include "systemc.h"
@@ -26,19 +21,6 @@
 // Data types and constants
 #define VALUES_PER_WORD (DMA_SIZE / DATA_BITWIDTH)
 
-
-#if ((SIZE_IN_CHUNK_DATA % VALUES_PER_WORD) == 0)
-#define SIZE_IN_CHUNK (SIZE_IN_CHUNK_DATA / VALUES_PER_WORD)
-#else
-#define SIZE_IN_CHUNK (SIZE_IN_CHUNK_DATA / VALUES_PER_WORD + 1)
-#endif
-
-
-#if ((SIZE_OUT_CHUNK_DATA % VALUES_PER_WORD) == 0)
-#define SIZE_OUT_CHUNK (SIZE_OUT_CHUNK_DATA / VALUES_PER_WORD)
-#else
-#define SIZE_OUT_CHUNK (SIZE_OUT_CHUNK_DATA / VALUES_PER_WORD + 1)
-#endif
 
 // data word
 #if (IS_TYPE_FIXED_POINT ==  1)
@@ -88,10 +70,7 @@ typedef struct dma_info {
 
 void top(dma_word_t *out, dma_word_t *in1,
 	/* <<--params-->> */
-	 const unsigned conf_info_numX,
-	 const unsigned conf_info_numK,
 	 const unsigned conf_info_num_batch_x,
-         const unsigned conf_info_batch_size_x,
 	 dma_info_t &load_ctrl,
 	 dma_info_t &store_ctrl);
 
