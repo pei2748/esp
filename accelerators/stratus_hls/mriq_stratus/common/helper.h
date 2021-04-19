@@ -14,8 +14,11 @@
 #include <math.h>
 
 
-//#include <string.h>
+#include <string.h>
 
+
+#define PI   3.1415926535897932384626433832795029f
+#define PIx2 6.2831853071795864769252867665590058f
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +31,13 @@ extern "C" {
 		 float** phiR, float** phiI);
 
   void outputData(const char* fName, float** outR, float** outI, int* numX);
+
+  void ComputeQ(int numK, int numX,
+	      float *plm_kx, float *plm_ky, float *plm_kz,
+	      float* plm_x, float* plm_y, float* plm_z,
+	      float *plm_phiR, float *plm_phiI,
+	      float *plm_Qr, float *plm_Qi);
+  void createDataStructsforCompute(int numX, float** Qr, float** Qi);
 
 
 #ifdef __cplusplus
@@ -51,11 +61,10 @@ void inputData(const char* fName, int * _numK, int* _numX,
     }
   fread (&numK, sizeof (int), 1, fid);
   *_numK = numK;
-
+  printf("  Reading from input file, numK = %d\n", numK);
   fread (&numX, sizeof (int), 1, fid);
   *_numX = numX;
-
-  //  printf("  Reading from input file, numX = %d, numK = %d\n", numX, numK);
+  printf("  Reading from input file, numX = %d\n", numX);
 
   *kx = (float *) memalign(16, numK * sizeof (float));
   fread (*kx, sizeof (float), numK, fid);
@@ -74,7 +83,7 @@ void inputData(const char* fName, int * _numK, int* _numX,
   *phiI = (float *) memalign(16, numK * sizeof (float));
   fread (*phiI, sizeof (float), numK, fid);
   fclose (fid); 
-  //  printf("  Read input data successfully!\n");
+  printf("  Read input data successfully!\n");
 
 }
 
@@ -107,4 +116,44 @@ void outputData(const char* fName, float** outR, float** outI, int* _numX)
 }
 
 
+void ComputeQ(int numK, int numX,
+	      float *plm_kx, float *plm_ky, float *plm_kz,
+	      float* plm_x, float* plm_y, float* plm_z,
+	      float *plm_phiR, float *plm_phiI,
+	      float *plm_Qr, float *plm_Qi) {
+  float expArg;
+  float cosArg;
+  float sinArg;
+  float phiMag;
+  int indexK, indexX;
+  for (indexX = 0; indexX < numX; indexX++) {
+    // Sum the contributions to this point over all frequencies
+    float Qracc = 0.0f;
+    float Qiacc = 0.0f;
+    for (indexK = 0; indexK < numK; indexK++) {
+      phiMag = plm_phiR[indexK]*plm_phiR[indexK] + plm_phiI[indexK]*plm_phiI[indexK];
 
+
+      expArg = PIx2 * (plm_kx[indexK] * plm_x[indexX] +
+                       plm_ky[indexK] * plm_y[indexX] +
+                       plm_kz[indexK] * plm_z[indexX]);      
+      cosArg = cosf(expArg);
+      sinArg = sinf(expArg);
+
+      Qracc += phiMag * cosArg;
+      Qiacc += phiMag * sinArg;
+    }
+    plm_Qr[indexX] = Qracc;
+    plm_Qi[indexX] = Qiacc;
+  }
+}
+
+
+void createDataStructsforCompute(int numX, float** Qr, float** Qi)
+{
+
+  *Qr = (float*) memalign(16, numX * sizeof (float));
+  memset((void *)*Qr, 0, numX * sizeof(float));
+  *Qi = (float*) memalign(16, numX * sizeof (float));
+  memset((void *)*Qi, 0, numX * sizeof(float));
+}

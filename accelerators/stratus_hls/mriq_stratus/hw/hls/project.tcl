@@ -69,8 +69,7 @@ define_hls_module mriq ../src/mriq.cpp
 define_system_module tb ../tb/system.cpp ../tb/sc_main.cpp
 
 # Testbench configuration
-set INPUT_PATH "../input"
-set OUTPUT_PATH "../output"
+set DATA_PATH "../data"
 
 # TESTBENCHES can be set as the following: 
 # "32_32_32_dataset",  "64_64_64_dataset",  "128_128_128_dataset", "test_small"
@@ -93,16 +92,16 @@ foreach dma [list 64] {
 	        define_system_config tb TESTBENCH_P$para\_A$arch\_DMA$dma -DARCH=$arch -io_config IOCFG_P$para\_A$arch\_DMA$dma
 	    foreach tb $TESTBENCHES {
 		set ARGV ""
-		append ARGV "$INPUT_PATH/$tb.bin ";
-		append ARGV "$OUTPUT_PATH/$tb.out ";
+		append ARGV "$DATA_PATH/$tb.bin ";
+		append ARGV "$DATA_PATH/$tb.out ";
 		define_sim_config "BEHAV_P$para\_A$arch\_DMA$dma" "mriq BEH" "tb TESTBENCH_P$para\_A$arch\_DMA$dma" -io_config IOCFG_P$para\_A$arch\_DMA$dma -argv $ARGV
 	    }
 	    foreach cfg [list BASIC] {
 		set cname $cfg\_P$para\_A$arch\_DMA$dma
 		define_hls_config mriq $cname -io_config IOCFG_P$para\_A$arch\_DMA$dma --clock_period=$CLOCK_PERIOD $COMMON_HLS_FLAGS -DHLS_DIRECTIVES_$cfg
 		set ARGV ""
-		append ARGV "$INPUT_PATH/$tb.bin ";
-		append ARGV "$OUTPUT_PATH/$tb.out ";
+		append ARGV "$DATA_PATH/$tb.bin ";
+		append ARGV "$DATA_PATH/$tb.out ";
 		if {$TECH_IS_XILINX == 1} {
 		        define_sim_config "$cname\_V" "mriq RTL_V $cname" "tb TESTBENCH_P$para\_A$arch\_DMA$dma" -io_config IOCFG_P$para\_A$arch\_DMA$dma -argv $ARGV -verilog_top_modules glbl
 		} else {
