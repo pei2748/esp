@@ -18,7 +18,6 @@ int main(int argc, char **argv) {
 
     /* <<--params-->> */
 
-
 	 const unsigned num_batch_x = 2;
 
 
@@ -58,8 +57,11 @@ int main(int argc, char **argv) {
     dma_info_t load;
     dma_info_t store;
 
-    const char *inputFile = "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/data/test_small.bin";
-    const char *goldFile = "/home/esp2020/pl2748/new-esp/esp/accelerators/vivado_hls/mriq_vivado/hw/data/test_small.out";
+
+    // the running folder of csim is mriq_vivado/hw/hls-work-<board>/mriq_vivado_dma32_w32/mriq_vivado_acc/csim/build
+
+    const char *inputFile = "../../../../../data/test_small.bin";
+    const char *goldFile = "../../../../../data/test_small.out";
 
 
 
