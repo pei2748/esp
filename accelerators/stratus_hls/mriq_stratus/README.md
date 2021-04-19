@@ -1,7 +1,10 @@
 ### Directory introduction:
 hw/
+
 sw/
+
 common/
+
 
 |── helper.h 
 >Functions reading data from input file and golden output file. It is included by init_buff.h file
