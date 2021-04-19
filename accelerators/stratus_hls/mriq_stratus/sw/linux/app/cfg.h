@@ -9,12 +9,6 @@
 typedef int32_t token_t;
 
 /* <<--params-def-->> */
-//#define NUMX 4
-//#define NUMK 16
-//#define NUM_BATCH_K 1
-//#define BATCH_SIZE_K 16
-//#define NUM_BATCH_X 1
-//#define BATCH_SIZE_X 4
 
 
 #define NUM_BATCH_K 1

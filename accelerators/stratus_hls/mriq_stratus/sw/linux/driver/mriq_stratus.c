@@ -13,8 +13,7 @@
 #define DRV_NAME	"mriq_stratus"
 
 /* <<--regs-->> */
-#define MRIQ_NUMX_REG 0x54
-#define MRIQ_NUMK_REG 0x50
+
 #define MRIQ_NUM_BATCH_K_REG 0x4c
 #define MRIQ_BATCH_SIZE_K_REG 0x48
 #define MRIQ_NUM_BATCH_X_REG 0x44
@@ -51,8 +50,7 @@ static void mriq_prep_xfer(struct esp_device *esp, void *arg)
 	struct mriq_stratus_access *a = arg;
 
 	/* <<--regs-config-->> */
-	iowrite32be(a->numX, esp->iomem + MRIQ_NUMX_REG);
-	iowrite32be(a->numK, esp->iomem + MRIQ_NUMK_REG);
+
 	iowrite32be(a->num_batch_k, esp->iomem + MRIQ_NUM_BATCH_K_REG);
 	iowrite32be(a->batch_size_k, esp->iomem + MRIQ_BATCH_SIZE_K_REG);
 	iowrite32be(a->num_batch_x, esp->iomem + MRIQ_NUM_BATCH_X_REG);

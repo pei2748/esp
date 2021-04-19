@@ -20,8 +20,6 @@
 struct mriq_stratus_access {
 	struct esp_access esp;
 	/* <<--regs-->> */
-	unsigned numX;
-	unsigned numK;
 	unsigned num_batch_k;
 	unsigned batch_size_k;
 	unsigned num_batch_x;
