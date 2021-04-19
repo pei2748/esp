@@ -13,8 +13,8 @@
 #define DRV_NAME	"mriq_vivado"
 
 /* <<--regs-->> */
-#define MRIQ_NUMX_REG 0x44
-#define MRIQ_NUMK_REG 0x40
+#define MRIQ_BATCH_SIZE_X_REG 0x40
+
 
 struct mriq_vivado_device {
 	struct esp_device esp;
@@ -47,8 +47,7 @@ static void mriq_prep_xfer(struct esp_device *esp, void *arg)
 	struct mriq_vivado_access *a = arg;
 
 	/* <<--regs-config-->> */
-	iowrite32be(a->numX, esp->iomem + MRIQ_NUMX_REG);
-	iowrite32be(a->numK, esp->iomem + MRIQ_NUMK_REG);
+	iowrite32be(a->num_batch_x, esp->iomem + MRIQ_BATCH_SIZE_X_REG);
 	iowrite32be(a->src_offset, esp->iomem + SRC_OFFSET_REG);
 	iowrite32be(a->dst_offset, esp->iomem + DST_OFFSET_REG);
 

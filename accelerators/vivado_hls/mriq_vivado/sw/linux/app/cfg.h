@@ -9,20 +9,19 @@
 typedef int32_t token_t;
 
 /* <<--params-def-->> */
-#define NUMX 4
-#define NUMK 16
+#define NUM_BATCH_X 2
+
 
 /* <<--params-->> */
-const int32_t numX = NUMX;
-const int32_t numK = NUMK;
+const int32_t num_batch_x = NUM_BATCH_X;
+
 
 #define NACC 1
 
 struct mriq_vivado_access mriq_cfg_000[] = {
 	{
 		/* <<--descriptor-->> */
-		.numX = NUMX,
-		.numK = NUMK,
+		.num_batch_x = NUM_BATCH_X,
 		.src_offset = 0,
 		.dst_offset = 0,
 		.esp.coherence = ACC_COH_NONE,

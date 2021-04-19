@@ -20,8 +20,7 @@
 struct mriq_vivado_access {
 	struct esp_access esp;
 	/* <<--regs-->> */
-	unsigned numX;
-	unsigned numK;
+	unsigned num_batch_x;
 	unsigned src_offset;
 	unsigned dst_offset;
 };
