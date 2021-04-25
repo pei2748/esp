@@ -12,7 +12,7 @@
 
 #include "../../common/utils.h"
 
-typedef int32_t token_t;
+//typedef int32_t token_t; defined in utils.h file5
 
 static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 {
@@ -81,7 +81,7 @@ static int validate_buf(token_t *out, float *gold)
 
 static void init_buf (token_t *in, float * gold)
 {
-#include "../../hw/data4bm/test_32_x4_k16_bm.h"
+#include "../../hw/data/test_32_x4_k16_bm.h"
 }
 
 

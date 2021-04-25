@@ -85,7 +85,7 @@ set TESTBENCHES "test_small"
 ######################################################################
 set DEFAULT_ARGV ""
 
-foreach dma [list 64] {
+foreach dma [list 32] {
     foreach arch [list 0] {
 	foreach para [list 4] {
 	        define_io_config * IOCFG_P$para\_A$arch\_DMA$dma -DPARAL=$para -DARCH=$arch -DDMA_WIDTH=$dma 

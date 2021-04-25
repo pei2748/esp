@@ -2,6 +2,9 @@
 
 // init_buffer function can't be used in baremetal app 
 
+
+
+
 void init_buffer(float *in, float *gold, 
 		 const char* inputFile, 
 		 const char* goldFile,
@@ -12,13 +15,13 @@ void init_buffer(float *in, float *gold,
   int numX_bm, numK_bm;
   float *kx, *ky, *kz, *x, *y, *z, *phiR, *phiI;
 
-
   inputData(inputFile, 
 	      &numK_bm, 
 	      &numX_bm, 
 	      &kx, &ky, &kz, 
 	      &x, &y, &z, 
 	      &phiR, &phiI);
+
 
   int i, j;
   int offset_idx = 0;

@@ -17,8 +17,7 @@
 #include <string.h>
 
 
-#define PI   3.1415926535897932384626433832795029f
-#define PIx2 6.2831853071795864769252867665590058f
+#define Pix2 6.2831853071795864769252867665590058f
 
 #ifdef __cplusplus
 extern "C" {
@@ -134,7 +133,7 @@ void ComputeQ(int numK, int numX,
       phiMag = plm_phiR[indexK]*plm_phiR[indexK] + plm_phiI[indexK]*plm_phiI[indexK];
 
 
-      expArg = PIx2 * (plm_kx[indexK] * plm_x[indexX] +
+      expArg = Pix2 * (plm_kx[indexK] * plm_x[indexX] +
                        plm_ky[indexK] * plm_y[indexX] +
                        plm_kz[indexK] * plm_z[indexX]);      
       cosArg = cosf(expArg);

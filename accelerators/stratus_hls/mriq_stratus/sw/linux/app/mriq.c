@@ -26,6 +26,26 @@ static unsigned mem_size;
 
 
 /* User-defined code */
+void file2be(const char* in_file_name, const char* out_file_name)
+{
+
+  FILE* in_file = fopen(in_file_name, "r");
+  FILE* out_file = fopen(out_file_name, "w");
+
+  uint8_t rd_data[4];
+  int i;
+
+  while(fread(rd_data, sizeof(uint8_t), 4, in_file) == 4){
+    for (i = 3; i>= 0; i--)
+      fwrite(&rd_data[i], sizeof(uint8_t), 1, out_file);
+  }
+
+  fclose(in_file);
+  fclose(out_file);
+}
+
+
+
 static int validate_buf(token_t *out, float *gold)
 {
     float *out_fp;
@@ -54,10 +74,25 @@ static void init_buf(token_t *in, float *in_fp, float *gold,
 {
 
 
+#ifdef __sparc
+
+  const char* be_inputFile = "be_inputFile.bin";
+  const char* be_goldFile = "be_goldFile.bin";
+
+  file2be(inputFile, be_inputFile);
+  file2be(goldFile, be_goldFile);
+
+  init_buffer(in_fp, gold, be_inputFile, be_goldFile, 
+	      batch_size_x, num_batch_x,
+	      batch_size_k, num_batch_k);
+
+#else
+
 
   init_buffer(in_fp, gold, inputFile, goldFile, 
 	      batch_size_x, num_batch_x,
 	      batch_size_k, num_batch_k);
+#endif
 
   for(int i=0; i < in_len; i++) {
     in[i] = float2fx(in_fp[i], FX_IL);
