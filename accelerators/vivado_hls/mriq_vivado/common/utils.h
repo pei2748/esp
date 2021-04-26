@@ -52,7 +52,7 @@ int diff(native_t *gold, native_t *out, int len, float diff_thresh)
       diff = fabs((gold[i] - out[i])/out[i]);
     } else { // gold != 0
       diff = fabs((gold[i] - out[i])/gold[i]);
-      //   printf("i = %d, out = %f, gold = %f\n", i, out[i], gold[i]);
+      //      printf("i = %d, out = %f, gold = %f\n", i, out[i], gold[i]);
     }
 
     if (diff > diff_thresh)

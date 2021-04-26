@@ -12,8 +12,8 @@
 #define float2fx float_to_fixed32
 #define FX_IL 12
 
-#define NUMK 16
-#define BATCH_SIZE_X 2
+#define NUMK 1024
+#define BATCH_SIZE_X 8
 
 static unsigned in_words_adj;
 static unsigned out_words_adj;
@@ -50,8 +50,25 @@ static void init_buf(token_t *inbuff, float *inbuff_fp, float *outbuff_gold,
 {
 
   // Prepare input data
+
+#ifdef __sparc
+
+  const char* be_inputFile = "be_inputFile.bin";
+  const char* be_goldFile = "be_goldFile.bin";
+
+  file2be(inputFile, be_inputFile);
+  file2be(goldFile, be_goldFile);
+
+  init_buffer(inbuff_fp, outbuff_gold, be_inputFile, be_goldFile, 
+	      BATCH_SIZE_X, num_batch_x, NUMK);
+
+#else
+
   init_buffer(inbuff_fp, outbuff_gold, inputFile, goldFile, 
 	      BATCH_SIZE_X, num_batch_x, NUMK);
+#endif
+
+
 
   for(int i=0; i < in_len; i++) {
     inbuff[i] = float2fx(inbuff_fp[i], FX_IL);

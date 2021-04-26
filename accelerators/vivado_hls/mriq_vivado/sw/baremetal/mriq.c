@@ -18,8 +18,8 @@ typedef int32_t token_t;
 #define float2fx float_to_fixed32
 #define FX_IL 12
 
-#define NUMK 16
-#define BATCH_SIZE_X 2
+#define NUMK 1024
+#define BATCH_SIZE_X 8
 
 static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 {
@@ -33,7 +33,7 @@ static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 /* <<--params-->> */
 
 
-const int32_t num_batch_x = 2;
+const int32_t num_batch_x = 8;
 
 
 static unsigned in_words_adj;
@@ -81,7 +81,7 @@ static int validate_buf(token_t *out, float *gold)
 
 static void init_buf (token_t *in, float* gold)
 {
-#include "../../hw/data/test_32_x4_k16_bm.h"
+#include "../../hw/data/test_32_x64_k1024_bm.h"
 }
 
 int main(int argc, char * argv[])

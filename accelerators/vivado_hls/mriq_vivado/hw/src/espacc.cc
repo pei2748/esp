@@ -7,6 +7,8 @@
 #include <cstring>
 #include "espacc_utils.h" // dma_read and dma_write
 
+
+
 void init_parameters(dma_length_load_t &dma_length_load,
 		     dma_length_store_t &dma_length_store,
 		     unsigned &store_offset,
@@ -192,11 +194,6 @@ void top(dma_word_t *out, dma_word_t *in1,
   word_t _inbuff_phiR[NUMK];
   word_t _inbuff_phiI[NUMK];
 
-#pragma HLS array_partition variable=_inbuff_kx block factor=4
-#pragma HLS array_partition variable=_inbuff_ky block factor=4
-#pragma HLS array_partition variable=_inbuff_kz block factor=4
-#pragma HLS array_partition variable=_inbuff_phiR block factor=4
-#pragma HLS array_partition variable=_inbuff_phiI block factor=4
 
  go:
   for (int c = 0; c < num_batch_x; c++)

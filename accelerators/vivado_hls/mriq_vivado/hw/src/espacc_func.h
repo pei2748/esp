@@ -35,12 +35,12 @@
 
     c_label_k:for(unsigned indexK = 0; indexK < NUMK; indexK += PRL)
         {
-#pragma HLS pipeline II=2
+#pragma HLS pipeline II=1
 
 
         c_label_k0:for(unsigned i=0; i<PRL; i++) {
 #pragma HLS unroll
-	    unsigned idx = indexK + i;
+      	    unsigned idx = indexK + i;
 
 	    kx[i] =   _inbuff_kx[idx];
 	    ky[i] =   _inbuff_ky[idx];
@@ -59,14 +59,13 @@
 	    Qiacc_p[i] = phiMag[i] * sinArg[i];
           }
 
-          {
-	    Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3];
-	    Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3];
+          c_label_k2:for(unsigned i=0; i<PRL; i++) {
+#pragma HLS unroll
+	    Qracc += Qracc_p[i];
+	    Qiacc += Qiacc_p[i];
           }
 
         } // end of outer k                                                   
-      //      _outbuff_Qr[indexX] = Qracc;
-      //      _outbuff_Qi[indexX] = Qiacc;
 
       _outbuff_Qr[indexX] = Qracc;
       _outbuff_Qi[indexX] = Qiacc;

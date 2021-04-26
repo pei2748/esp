@@ -9,7 +9,7 @@
 typedef int32_t token_t;
 
 /* <<--params-def-->> */
-#define NUM_BATCH_X 2
+#define NUM_BATCH_X 8
 
 
 /* <<--params-->> */

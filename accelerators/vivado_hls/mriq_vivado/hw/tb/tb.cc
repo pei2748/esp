@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 
     /* <<--params-->> */
 
-	 const unsigned num_batch_x = 2;
+	 const unsigned num_batch_x = 8;
 
 
     uint32_t in_words_adj;
@@ -60,8 +60,11 @@ int main(int argc, char **argv) {
 
     // the running folder of csim is mriq_vivado/hw/hls-work-<board>/mriq_vivado_dma32_w32/mriq_vivado_acc/csim/build
 
-    const char *inputFile = "../../../../../data/test_small.bin";
-    const char *goldFile = "../../../../../data/test_small.out";
+    //    const char *inputFile = "../../../../../data/test_small.bin";
+    //    const char *goldFile = "../../../../../data/test_small.out";
+
+    const char *inputFile = "../../../../../data/test_32_x64_k1024.bin";
+    const char *goldFile = "../../../../../data/test_32_x64_k1024.out";
 
 
 
