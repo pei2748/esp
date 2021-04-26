@@ -35,9 +35,6 @@
         *   compile genData.c and wrt_bmData.c
 
 
-
-compile the genData.c and wrt_bmData.c.
-
 * `sw/`
 
   * `baremetal`
@@ -64,15 +61,15 @@ compile the genData.c and wrt_bmData.c.
 
 ###  Testing Instructions:
 
-##### Testing with testbench
+#### Testing with testbench
 
 Input and golden output file paths are hardcoded as a relative path in tb/tb.cc, and files are hw/data/test\_small.bin and hw/data/test\_small.out. Its configuration parameters are [batch\_size\_x, num\_batch\_x, batch\_size\_k, num\_batch\_k] = [4, 1, 16, 1]. If you want to use other parameters, you can firstly specify them in tb/tb.cc file, then use the same parameters to generate the corresponding testing data with programs in hw/data. You can rename the testing file in tb/tb.cc or use the same name "test\_small"
 
-##### Testing with baremetal app
+#### Testing with baremetal app
 
 We can generate the corresponding test data with the two programs under hw/data/ folder. The instructions of how to generate test data are in the README file of hw/data/. We then set the configuration parameters in sw/baremetal/mriq.c and include the file in init\_buf() function.
 
-##### Testing with Linux app
+#### Testing with Linux app
 
 There are three arguments of linux app: name-of-input-file, name-of-golden-outputfile, and the answer to "do you want to run software program of this accelerator?". For example:
 >  ./mriq_stratus.exe test_small.bin test_small.out 0
