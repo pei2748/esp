@@ -6,35 +6,33 @@
 #include "cynw_fixed.h"
 // Optional application-specific helper functions
 
-void mriq::load_data(FPDATA_S_WORD array[],  uint32_t dma_addr, uint32_t len)
+
+template <typename T>
+void mriq::dma_read(T array[],  uint32_t dma_index, uint32_t dma_length)
 {
-  dma_info_t dma_info(dma_addr, len/DMA_WORD_PER_BEAT, DMA_SIZE);
+  dma_info_t dma_info(dma_index, dma_length, DMA_SIZE);
   this -> dma_read_ctrl.put(dma_info);
 
-  for(uint16_t i = 0; i < len; i += DMA_WORD_PER_BEAT)
+  for(uint16_t i = 0; i < dma_length; i++)
     {
-      HLS_PROTO("load one data");
-
       HLS_BREAK_DEP(array);
-
       sc_dt::sc_bv<DMA_WIDTH> data = this->dma_read_chnl.get();
       wait();
 
       for(int k = 0; k < DMA_WORD_PER_BEAT; k++){
 	HLS_UNROLL_SIMPLE;
-	array[i + k] = data.range((k+1) * DATA_WIDTH - 1, k * DATA_WIDTH).to_int64();
-	//wait();
+	array[i * DMA_WORD_PER_BEAT + k] = data.range((k+1) * DATA_WIDTH - 1, k * DATA_WIDTH).to_int64();
       }
     }
 }
 
-
-void mriq::store_data(FPDATA_L_WORD array[], uint32_t dma_addr, uint32_t len)
+template <typename T>
+void mriq::dma_write(T array[], uint32_t dma_index, uint32_t dma_length)
 {
-  dma_info_t dma_info(dma_addr, len/DMA_WORD_PER_BEAT, DMA_SIZE);
+  dma_info_t dma_info(dma_index, dma_length, DMA_SIZE);
   this -> dma_write_ctrl.put(dma_info);
 
-  for(uint16_t i = 0; i < len; i += DMA_WORD_PER_BEAT)
+  for(uint16_t i = 0; i < dma_length; i++)
     {
       HLS_BREAK_DEP(array);
       sc_dt::sc_bv<DMA_WIDTH> data;
@@ -42,11 +40,11 @@ void mriq::store_data(FPDATA_L_WORD array[], uint32_t dma_addr, uint32_t len)
 
       for(int k = 0; k < DMA_WORD_PER_BEAT; k++){
 	HLS_UNROLL_SIMPLE;
-	data.range((k+1) * DATA_WIDTH - 1, k * DATA_WIDTH) = array[i + k];
+	data.range((k+1) * DATA_WIDTH - 1, k * DATA_WIDTH) = array[i * DMA_WORD_PER_BEAT + k];
+
       }
       this->dma_write_chnl.put(data);
     }
-
 }
 
 

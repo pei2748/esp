@@ -56,30 +56,34 @@ void mriq::load_input()
         wait();
 
 	bool pingpong_x = true;
-        int32_t dma_addr = 0;
 
-	// in case for small test data.
+        int32_t dma_index = 0;
 
-
+	const int32_t dma_length_k = batch_size_k >> (DMA_WORD_PER_BEAT - 1);
+	const int32_t dma_length_x = batch_size_x >> (DMA_WORD_PER_BEAT - 1);
 
 #if(ARCH == 0) // loading the whole k-space data into PLM
-	for(int n = 0; n < num_batch_k; n++) {
-	    load_data(plm_kx, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	    load_data(plm_ky, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	    load_data(plm_kz, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	    load_data(plm_phiR, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	    load_data(plm_phiI, dma_addr, batch_size_k);    dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-	} // finish loading 5 k-space variables.
+
+	// for A0, dma_length_k = batch_size_k/DMA_WORD_PER_BEAT, batch_size_k = numK
+
+	dma_read<FPDATA_S_WORD>(plm_kx,   dma_index, dma_length_k);    dma_index += dma_length_k;
+	dma_read<FPDATA_S_WORD>(plm_ky,   dma_index, dma_length_k);    dma_index += dma_length_k;
+	dma_read<FPDATA_S_WORD>(plm_kz,   dma_index, dma_length_k);    dma_index += dma_length_k;
+	dma_read<FPDATA_S_WORD>(plm_phiR, dma_index, dma_length_k);    dma_index += dma_length_k;
+	dma_read<FPDATA_S_WORD>(plm_phiI, dma_index, dma_length_k);    dma_index += dma_length_k;
+
+	// finish loading 5 k-space variables.
        
 	for(int l=0; l < num_batch_x; l++) {
+
 	    if(pingpong_x) {
-                load_data(plm_x_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-                load_data(plm_y_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-                load_data(plm_z_ping, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+                dma_read<FPDATA_S_WORD>(plm_x_ping, dma_index, dma_length_x);    dma_index += dma_length_x;
+                dma_read<FPDATA_S_WORD>(plm_y_ping, dma_index, dma_length_x);    dma_index += dma_length_x;
+                dma_read<FPDATA_S_WORD>(plm_z_ping, dma_index, dma_length_x);    dma_index += dma_length_x;
 	    } else {
-                load_data(plm_x_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-                load_data(plm_y_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-                load_data(plm_z_pong, dma_addr, batch_size_x);    dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+                dma_read<FPDATA_S_WORD>(plm_x_pong, dma_index, dma_length_x);    dma_index += dma_length_x;
+                dma_read<FPDATA_S_WORD>(plm_y_pong, dma_index, dma_length_x);    dma_index += dma_length_x;
+                dma_read<FPDATA_S_WORD>(plm_z_pong, dma_index, dma_length_x);    dma_index += dma_length_x;
 	    }
 	    this->load_compute_handshake();
 	    pingpong_x = !pingpong_x;
@@ -92,7 +96,7 @@ void mriq::load_input()
         const int32_t total_loading =  num_batch_k * batch_size_x * num_batch_x; 
 
 	// address offset of the first x-space data
-        int32_t dma_addr_x = ( 5 * batch_size_k * num_batch_k ) >> (DMA_WORD_PER_BEAT - 1);
+        int32_t dma_index_x = ( 5 * batch_size_k * num_batch_k ) >> (DMA_WORD_PER_BEAT - 1);
 
 	// after every counter_x_init number of loadings, reverse pingpong_x
         const int32_t counter_x_ini = num_batch_k * batch_size_x;
@@ -110,16 +114,17 @@ void mriq::load_input()
 
             if(counter_x == counter_x_ini  && pingpong_x == true) {
 
-                load_data(plm_x_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
-                load_data(plm_y_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
-                load_data(plm_z_ping, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+                dma_read<FPDATA_S_WORD>(plm_x_ping, dma_index_x, dma_length_x);    dma_index_x += dma_length_x;
+                dma_read<FPDATA_S_WORD>(plm_y_ping, dma_index_x, dma_length_x);    dma_index_x += dma_length_x;
+                dma_read<FPDATA_S_WORD>(plm_z_ping, dma_index_x, dma_length_x);    dma_index_x += dma_length_x;
+
                 pingpong_x = !pingpong_x;
 
             } else if (counter_x == 0 && pingpong_x == false) {
 
-                load_data(plm_x_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
-                load_data(plm_y_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
-                load_data(plm_z_pong, dma_addr_x, batch_size_x);    dma_addr_x += batch_size_x/DMA_WORD_PER_BEAT;
+                dma_read<FPDATA_S_WORD>(plm_x_pong, dma_index_x, dma_length_x);    dma_index_x += dma_length_x;
+                dma_read<FPDATA_S_WORD>(plm_y_pong, dma_index_x, dma_length_x);    dma_index_x += dma_length_x;
+                dma_read<FPDATA_S_WORD>(plm_z_pong, dma_index_x, dma_length_x);    dma_index_x += dma_length_x;
 
                 counter_x = counter_x_ini << 1; // counter_x = initial value * 2;
 
@@ -128,23 +133,26 @@ void mriq::load_input()
             
 	    if(pingpong_k) {
 		//HLS_PROTO("load ping");
-                load_data(plm_kx_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-                load_data(plm_ky_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-                load_data(plm_kz_ping,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-                load_data(plm_phiR_ping,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-                load_data(plm_phiI_ping,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+                dma_read<FPDATA_S_WORD>(plm_kx_ping,   dma_index, dma_length_k);   dma_index += dma_length_k;
+                dma_read<FPDATA_S_WORD>(plm_ky_ping,   dma_index, dma_length_k);   dma_index += dma_length_k;
+                dma_read<FPDATA_S_WORD>(plm_kz_ping,   dma_index, dma_length_k);   dma_index += dma_length_k;
+                dma_read<FPDATA_S_WORD>(plm_phiR_ping, dma_index, dma_length_k);   dma_index += dma_length_k;
+                dma_read<FPDATA_S_WORD>(plm_phiI_ping, dma_index, dma_length_k);   dma_index += dma_length_k;
+
                 counter_x -= 1;  counter_k -= 1;
+
 	    } else {
-	        load_data(plm_kx_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-		load_data(plm_ky_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-		load_data(plm_kz_pong,  dma_addr, batch_size_k);   dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-		load_data(plm_phiR_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
-		load_data(plm_phiI_pong,  dma_addr, batch_size_k); dma_addr += batch_size_k/DMA_WORD_PER_BEAT;
+	        dma_read<FPDATA_S_WORD>(plm_kx_pong,   dma_index, dma_length_k);    dma_index += dma_length_k;
+		dma_read<FPDATA_S_WORD>(plm_ky_pong,   dma_index, dma_length_k);    dma_index += dma_length_k;
+		dma_read<FPDATA_S_WORD>(plm_kz_pong,   dma_index, dma_length_k);    dma_index += dma_length_k;
+		dma_read<FPDATA_S_WORD>(plm_phiR_pong, dma_index, dma_length_k);    dma_index += dma_length_k;
+		dma_read<FPDATA_S_WORD>(plm_phiI_pong, dma_index, dma_length_k);    dma_index += dma_length_k;
+
 		counter_x -= 1;  counter_k -= 1;
 	    }
             
 	    if(counter_k == 0) { // loading finished for one x-space data point
-                dma_addr = 0;
+                dma_index = 0;
 		counter_k = num_batch_k;
 	    }	    
 	    pingpong_k = !pingpong_k;
@@ -202,30 +210,22 @@ void mriq::store_output()
         HLS_PROTO("store-dma");
         wait();
 
-        uint32_t store_offset = round_up(3 * batch_size_x * num_batch_x + 5 * batch_size_k * num_batch_k, DMA_WORD_PER_BEAT);
+        const uint32_t store_offset = round_up(3 * batch_size_x * num_batch_x + 5 * batch_size_k * num_batch_k, DMA_WORD_PER_BEAT);       
+	const uint32_t dma_length_x = batch_size_x >> (DMA_WORD_PER_BEAT - 1);
+
+	uint32_t dma_index = store_offset >> (DMA_WORD_PER_BEAT - 1);
+	bool pingpong_x = true;
 	wait();
 
-
-
-	uint32_t dma_addr = store_offset/DMA_WORD_PER_BEAT;
-
-
-	bool pingpong_x = true;
-
-
-
 	for(int i = 0; i < num_batch_x; i++) {
+
 	    this->store_compute_handshake();
 	    if(pingpong_x) {
-		store_data(plm_Qr_ping, dma_addr, batch_size_x);
-		dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-		store_data(plm_Qi_ping, dma_addr, batch_size_x);
-		dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+		dma_write<FPDATA_L_WORD>(plm_Qr_ping, dma_index, dma_length_x); dma_index += dma_length_x;
+		dma_write<FPDATA_L_WORD>(plm_Qi_ping, dma_index, dma_length_x); dma_index += dma_length_x;
 	    } else {
-		store_data(plm_Qr_pong, dma_addr, batch_size_x);
-		dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
-		store_data(plm_Qi_pong, dma_addr, batch_size_x);
-		dma_addr += batch_size_x/DMA_WORD_PER_BEAT;
+		dma_write<FPDATA_L_WORD>(plm_Qr_pong, dma_index, dma_length_x); dma_index += dma_length_x;
+		dma_write<FPDATA_L_WORD>(plm_Qi_pong, dma_index, dma_length_x); dma_index += dma_length_x;
 	    }
 	    pingpong_x = !pingpong_x;
 	}
