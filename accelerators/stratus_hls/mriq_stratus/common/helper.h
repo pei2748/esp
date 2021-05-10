@@ -60,10 +60,10 @@ void inputData(const char* fName, int * _numK, int* _numX,
     }
   fread (&numK, sizeof (int), 1, fid);
   *_numK = numK;
-  printf("  Reading from input file, numK = %d\n", numK);
+
   fread (&numX, sizeof (int), 1, fid);
   *_numX = numX;
-  printf("  Reading from input file, numX = %d\n", numX);
+
 
   *kx = (float *) memalign(16, numK * sizeof (float));
   fread (*kx, sizeof (float), numK, fid);
@@ -82,7 +82,7 @@ void inputData(const char* fName, int * _numK, int* _numX,
   *phiI = (float *) memalign(16, numK * sizeof (float));
   fread (*phiI, sizeof (float), numK, fid);
   fclose (fid); 
-  printf("  Read input data successfully!\n");
+
 
 }
 

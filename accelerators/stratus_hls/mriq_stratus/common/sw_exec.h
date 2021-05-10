@@ -53,9 +53,9 @@ void sw_comp(int batch_size_k, int num_batch_k,
 }
 
 
-void sw_exec(float *gold, float *in, 
-	     int32_t batch_size_x, int32_t num_batch_x,
-	     int32_t batch_size_k, int32_t num_batch_k)
+unsigned long long sw_exec(float *gold, float *in, 
+			   int32_t batch_size_x, int32_t num_batch_x,
+			   int32_t batch_size_k, int32_t num_batch_k)
 {
 
 int numX, numK;
@@ -127,8 +127,8 @@ int numX, numK;
 
   sw_ns = ts_subtract(&ts_start, &ts_end);
 
-  printf("\n  > Test time : %llu (ns)\n", sw_ns);
-  printf("\n  ** Done! **\n\n");
+  printf("  > Test time : %llu (ns)\n", sw_ns);
+  printf("\n  ** DONE **\n\n");
 
   free(x);
   free(y);
@@ -139,6 +139,6 @@ int numX, numK;
   free(phiR);
   free(phiI);
 
-
+  return sw_ns;
 }
 

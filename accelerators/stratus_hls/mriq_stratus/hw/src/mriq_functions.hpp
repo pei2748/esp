@@ -156,13 +156,27 @@ void mriq::ComputeQ(FPDATA_S x,FPDATA_S y,FPDATA_S z, uint16_t  batch_size_k, bo
 
       // do accumulation
 
+#if(PARAL==4)
+      Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3];  
+      Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3];  
+#elif(PARAL==8)
+      Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3] + Qracc_p[4] +  Qracc_p[5] + Qracc_p[6] + Qracc_p[7];  
+      Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3] + Qiacc_p[4] +  Qiacc_p[5] + Qiacc_p[6] + Qiacc_p[7];  
+#elif(PARAL==16)
+      Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3] + Qracc_p[4] +  Qracc_p[5] + Qracc_p[6] + Qracc_p[7] +
+	Qracc_p[8] + Qracc_p[9] + Qracc_p[10] + Qracc_p[11] + Qracc_p[12] +  Qracc_p[13] + Qracc_p[14] + Qracc_p[15];
+      Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3] + Qiacc_p[4] +  Qiacc_p[5] + Qiacc_p[6] + Qiacc_p[7] +
+	Qiacc_p[8] + Qiacc_p[9] + Qiacc_p[10] + Qiacc_p[11] + Qiacc_p[12] +  Qiacc_p[13] + Qiacc_p[14] + Qiacc_p[15];
+#endif
+
+#if(0) // the following implementation can't have a valid scheduling when generating RTL for PARAL=8 and 16.
       for(i = 0; i < unroll_factor; i++){
 	HLS_UNROLL_SIMPLE;
 
 	Qracc += Qracc_p[i];
 	Qiacc += Qiacc_p[i];
       }
-      
+#endif     
 
     } // end for numK
 
@@ -224,12 +238,21 @@ void mriq::ComputeQ(FPDATA_S x,FPDATA_S y,FPDATA_S z, uint16_t  batch_size_k, bo
 	} // for- unroll facto
 
       // do accumulation
-      for(i = 0; i < unroll_factor; i++){
-	HLS_UNROLL_SIMPLE;
 
-	Qracc += Qracc_p[i];
-	Qiacc += Qiacc_p[i];
-      }
+#if(PARAL==4)
+      Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3];  
+      Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3];  
+#elif(PARAL==8)
+      Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3] + Qracc_p[4] +  Qracc_p[5] + Qracc_p[6] + Qracc_p[7];  
+      Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3] + Qiacc_p[4] +  Qiacc_p[5] + Qiacc_p[6] + Qiacc_p[7];  
+#elif(PARAL==16)
+      Qracc += Qracc_p[0] + Qracc_p[1] + Qracc_p[2] + Qracc_p[3] + Qracc_p[4] +  Qracc_p[5] + Qracc_p[6] + Qracc_p[7] +
+	Qracc_p[8] + Qracc_p[9] + Qracc_p[10] + Qracc_p[11] + Qracc_p[12] +  Qracc_p[13] + Qracc_p[14] + Qracc_p[15];
+      Qiacc += Qiacc_p[0] + Qiacc_p[1] + Qiacc_p[2] + Qiacc_p[3] + Qiacc_p[4] +  Qiacc_p[5] + Qiacc_p[6] + Qiacc_p[7] +
+	Qiacc_p[8] + Qiacc_p[9] + Qiacc_p[10] + Qiacc_p[11] + Qiacc_p[12] +  Qiacc_p[13] + Qiacc_p[14] + Qiacc_p[15];
+#endif
+
+
 
     } // for batch_k_size;
 #endif
